@@ -1,0 +1,17 @@
+# Node
+node_modules
+dist
+.env
+.env.*
+*.log
+
+# Prisma
+server/prisma/dev.db
+server/prisma/migrations/
+
+# Docker
+pg_data/
+*.pid
+
+# macOS
+.DS_Store
