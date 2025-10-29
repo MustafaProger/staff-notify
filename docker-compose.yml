@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: staff_notify_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: staff_user
+      POSTGRES_PASSWORD: staff_pass
+      POSTGRES_DB: staff_notify
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U staff_user -d staff_notify"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg_data:
