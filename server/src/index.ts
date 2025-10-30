@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRouter from "./modules/auth/auth.router";
+import metaRouter from "./modules/meta/meta.router";
 
 // подхватываем переменные окружения из server/.env
 dotenv.config();
@@ -20,6 +21,9 @@ app.get("/health", (_req, res) => {
 
 // авторизация (POST /auth/login и далее будем наращивать)
 app.use("/auth", authRouter);
+
+// метаданные (GET /meta/roles и /meta/departments)
+app.use("/meta", metaRouter);
 
 // стартуем сервер
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
