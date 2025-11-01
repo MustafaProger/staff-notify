@@ -2,8 +2,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import authRouter from "./modules/auth/auth.router";
+import authRouter from "./auth/routes";
 import metaRouter from "./modules/meta/meta.router";
+import announcementsRouter from "./announcements/routes";
+import { authMiddleware } from "./auth/middleware";
 
 // подхватываем переменные окружения из server/.env
 dotenv.config();
@@ -24,6 +26,8 @@ app.use("/auth", authRouter);
 
 // метаданные (GET /meta/roles и /meta/departments)
 app.use("/meta", metaRouter);
+
+app.use("/announcements", authMiddleware, announcementsRouter);
 
 // стартуем сервер
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;

@@ -29,4 +29,16 @@ model User {
   role          Role        @relation(fields: [roleId], references: [id])
   department    Department  @relation(fields: [departmentId], references: [id])
   createdAt     DateTime    @default(now())
+
+  announcements Announcement[]
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  body      String
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
