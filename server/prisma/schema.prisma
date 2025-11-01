@@ -66,3 +66,28 @@ model AnnouncementTarget {
   @@unique([announcementId, roleId, departmentId, userId])
   @@index([announcementId])
 }
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String?
+  entityId  Int?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+}
+
+model ReadReceipt {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  announcementId Int
+  readAt         DateTime     @default(now())
+
+  user           User         @relation(fields: [userId], references: [id])
+  announcement   Announcement @relation(fields: [announcementId], references: [id])
+
+  @@unique([userId, announcementId])
+  @@index([announcementId])
+}

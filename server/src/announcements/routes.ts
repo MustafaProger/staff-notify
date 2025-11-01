@@ -1,12 +1,12 @@
 import { Router, Response } from "express";
 import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
-import { CreateAnnouncementSchema, type CreateAnnouncementDto } from "./validation";
 import type { AuthedRequest } from "../types/auth";
+import { prisma } from "../prisma";
+import { CreateAnnouncementSchema, type CreateAnnouncementDto } from "./validation";
 
 const router = Router();
-const prisma = new PrismaClient();
 
+// POST /announcements
 router.post("/", async (req: AuthedRequest, res: Response) => {
   try {
     const dto = CreateAnnouncementSchema.parse(req.body) as CreateAnnouncementDto;

@@ -1,69 +1,144 @@
 import { Router } from "express";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-const router = Router();
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
+import { prisma } from "../prisma";
 
 const LoginSchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(6),
+  email: z.string().email(),
+  password: z.string().min(1),
 });
 
+const RegisterSchema = z.object({
+  email: z.string().email(),
+  password: z
+    .string()
+    .min(8, "Пароль должен содержать минимум 8 символов")
+    .regex(/[A-Z]/, "Нужна заглавная буква")
+    .regex(/[a-z]/, "Нужна строчная буква")
+    .regex(/[0-9]/, "Нужна цифра"),
+  fullName: z.string().min(1, "Укажите полное имя"),
+  departmentId: z.number().int("departmentId должен быть числом"),
+});
+
+const router = Router();
+
+/** POST /auth/login */
 router.post("/login", async (req, res) => {
-	try {
-		const { email, password } = LoginSchema.parse(req.body);
+  try {
+    const dto = LoginSchema.parse(req.body);
 
-		const user = await prisma.user.findUnique({
-			where: { email },
-			include: {
-				role: true,
-				department: true,
-			},
-		});
+    const user = await prisma.user.findUnique({ where: { email: dto.email } });
+    if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
-		if (!user) {
-			return res.status(401).json({ message: "Invalid credentials" });
-		}
+    const ok = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
-		const ok = await bcrypt.compare(password, user.passwordHash);
-		if (!ok) {
-			return res.status(401).json({ message: "Invalid credentials" });
-		}
+    const secret = process.env.JWT_SECRET || "dev-secret";
+    const token = jwt.sign(
+      { id: user.id, email: user.email, roleId: user.roleId, departmentId: user.departmentId },
+      secret,
+      { expiresIn: "7d" }
+    );
 
-		// payload для токена
-		const payload = {
-			id: user.id,
-			email: user.email,
-			roleId: user.roleId,
-			departmentId: user.departmentId,
-		};
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        roleId: user.roleId,
+        departmentId: user.departmentId,
+      },
+    });
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation error", errors: err.flatten() });
+    }
+    console.error("[/auth/login] error:", err);
+    return res.status(500).json({ message: "Internal error" });
+  }
+});
 
-		const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+/** POST /auth/register */
+router.post("/register", async (req, res) => {
+  try {
+    const dto = RegisterSchema.parse(req.body);
 
-		return res.json({
-			token,
-			user: {
-				id: user.id,
-				email: user.email,
-				fullName: user.fullName,
-				role: user.role.name,
-				department: user.department.name,
-			},
-		});
-	} catch (e) {
-		if (e instanceof z.ZodError) {
-			return res
-				.status(400)
-				.json({ message: "Validation error", issues: e.issues });
-		}
-		console.error(e);
-		return res.status(500).json({ message: "Internal error" });
-	}
+    // 1) Email уже существует?
+    const existing = await prisma.user.findUnique({
+      where: { email: dto.email },
+      select: { id: true },
+    });
+    if (existing) return res.status(409).json({ message: "Email уже зарегистрирован" });
+
+    // 2) Отдел существует?
+    const department = await prisma.department.findUnique({
+      where: { id: dto.departmentId },
+      select: { id: true },
+    });
+    if (!department) return res.status(400).json({ message: "Некорректный departmentId" });
+
+    // 3) Роль employee существует?
+    const employeeRole = await prisma.role.findUnique({
+      where: { name: "employee" },
+      select: { id: true },
+    });
+    if (!employeeRole) {
+      return res.status(500).json({ message: "Роль employee не найдена. Запусти seed." });
+    }
+
+    // 4) Хеширование пароля
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    // 5) Создание пользователя
+    const user = await prisma.user.create({
+      data: {
+        email: dto.email,
+        passwordHash,
+        fullName: dto.fullName,
+        roleId: employeeRole.id,
+        departmentId: dto.departmentId,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        roleId: true,
+        departmentId: true,
+      },
+    });
+
+    // 6) Аудит (нормальный путь)
+    await prisma.auditLog.create({
+      data: {
+        action: "user_registered",
+        entity: "user",
+        entityId: user.id,
+        metadata: {
+          email: user.email,
+          departmentId: dto.departmentId,
+          role: "employee",
+        },
+      },
+    });
+
+    // 7) JWT
+    const secret = process.env.JWT_SECRET || "dev-secret";
+    const token = jwt.sign(
+      { id: user.id, email: user.email, roleId: user.roleId, departmentId: user.departmentId },
+      secret,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(201).json({ token, user });
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation error", errors: err.flatten() });
+    }
+    console.error("[/auth/register] error:", err);
+    return res.status(500).json({ message: "Internal error" });
+  }
 });
 
 export default router;
