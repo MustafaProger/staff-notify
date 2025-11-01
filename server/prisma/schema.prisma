@@ -8,37 +8,61 @@ generator client {
 }
 
 model Role {
-  id    Int     @id @default(autoincrement())
-  name  String  @unique
-  users User[]
+  id      Int                  @id @default(autoincrement())
+  name    String               @unique
+  users   User[]
+  targets AnnouncementTarget[] @relation("RoleTargets")
 }
 
 model Department {
-  id    Int     @id @default(autoincrement())
-  name  String  @unique
-  users User[]
+  id      Int                  @id @default(autoincrement())
+  name    String               @unique
+  users   User[]
+  targets AnnouncementTarget[] @relation("DepartmentTargets")
 }
 
 model User {
-  id            Int         @id @default(autoincrement())
-  email         String      @unique
-  passwordHash  String
-  fullName      String
-  roleId        Int
-  departmentId  Int
-  role          Role        @relation(fields: [roleId], references: [id])
-  department    Department  @relation(fields: [departmentId], references: [id])
-  createdAt     DateTime    @default(now())
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  passwordHash   String
+  fullName       String
+  roleId         Int
+  departmentId   Int
+  role           Role          @relation(fields: [roleId], references: [id])
+  department     Department    @relation(fields: [departmentId], references: [id])
+  createdAt      DateTime      @default(now())
 
-  announcements Announcement[]
+  announcements  Announcement[]
+  targets        AnnouncementTarget[] @relation("UserTargets")
+  readReceipts   ReadReceipt[]        // ← какие объявления этот пользователь подтвердил
 }
 
 model Announcement {
-  id        Int      @id @default(autoincrement())
-  title     String
-  body      String
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int           @id @default(autoincrement())
+  title         String
+  body          String
+  authorId      Int
+  author        User          @relation(fields: [authorId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  targets       AnnouncementTarget[]
+  readReceipts  ReadReceipt[] // ← кто и когда нажал «Ознакомлен»
+}
+
+model AnnouncementTarget {
+  id             Int          @id @default(autoincrement())
+  announcementId Int
+  roleId         Int?
+  departmentId   Int?
+  userId         Int?
+
+  announcement   Announcement  @relation(fields: [announcementId], references: [id])
+  role           Role?         @relation(name: "RoleTargets", fields: [roleId], references: [id])
+  department     Department?   @relation(name: "DepartmentTargets", fields: [departmentId], references: [id])
+  user           User?         @relation(name: "UserTargets", fields: [userId], references: [id])
+
+  // защита от дублей одинакового таргета для одного объявления
+  @@unique([announcementId, roleId, departmentId, userId])
+  @@index([announcementId])
 }
