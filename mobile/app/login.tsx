@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert } from "react-native";
+import { View, Text, TextInput, Button, Alert, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { login, saveToken, me } from "../lib/api";
 
@@ -46,6 +46,14 @@ export default function LoginScreen() {
 				onPress={onLogin}
 				disabled={loading}
 			/>
+		<TouchableOpacity
+			onPress={() => router.push({ pathname: "/register" })}
+				disabled={loading}
+			>
+				<Text style={{ color: "#007aff", textAlign: "center", marginTop: 4 }}>
+					Нет аккаунта? Зарегистрируйтесь
+				</Text>
+			</TouchableOpacity>
 		</View>
 	);
 }
