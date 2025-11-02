@@ -20,14 +20,18 @@ export default function Layout() {
 				name='feed'
 				options={{ title: "Объявления" }}
 			/>
-			<Stack.Screen
-				name='announcement/[id]'
-				options={{ title: "Объявление" }}
-			/>
-			<Stack.Screen
-				name='announcements/create'
-				options={{ title: "Новое объявление" }}
-			/>
+		<Stack.Screen
+			name='announcement/[id]'
+			options={{ title: "Объявление" }}
+		/>
+		<Stack.Screen
+			name='announcement/stats'
+			options={{ title: "Статистика" }}
+		/>
+		<Stack.Screen
+			name='announcements/create'
+			options={{ title: "Новое объявление" }}
+		/>
 		</Stack>
 	);
 }

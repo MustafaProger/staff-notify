@@ -134,126 +134,247 @@ export default function CreateAnnouncementScreen() {
 
 	return (
 		<ScrollView
-			contentContainerStyle={{ padding: 16, gap: 16 }}
-			keyboardShouldPersistTaps='handled'
+			contentContainerStyle={{
+				padding: 20,
+				gap: 24,
+				backgroundColor: "#f8fafc",
+			}}
+			keyboardShouldPersistTaps="handled"
 		>
-			<Text style={{ fontSize: 22, fontWeight: "600" }}>Новое объявление</Text>
-
-			<View style={{ gap: 6 }}>
-				<Text>Заголовок</Text>
-				<TextInput
-					value={title}
-					onChangeText={setTitle}
-					placeholder='Например: Срочное собрание'
-					style={{ borderWidth: 1, borderRadius: 8, padding: 10 }}
-				/>
-			</View>
-
-			<View style={{ gap: 6 }}>
-				<Text>Текст</Text>
-				<TextInput
-					value={body}
-					onChangeText={setBody}
-					placeholder='Введите текст объявления'
-					multiline
-					numberOfLines={6}
-					style={{
-						borderWidth: 1,
-						borderRadius: 8,
-						padding: 10,
-						textAlignVertical: "top",
-					}}
-				/>
-			</View>
-
-			<Text style={{ fontWeight: "600" }}>
-				Кому отправить (необязательно)
-			</Text>
-
-			{loadingMeta ? (
-				<View style={{ paddingVertical: 16 }}>
-					<ActivityIndicator />
-				</View>
-			) : (
-				<View style={{ gap: 16 }}>
-					<View>
-						<Text style={{ marginBottom: 6, fontWeight: "500" }}>Роли</Text>
-						{roles.length ? (
-							roles.map((role) => {
-								const selected = selectedRoles.includes(role.id);
-								return (
-									<TouchableOpacity
-										key={role.id}
-										style={{
-											padding: 10,
-											borderRadius: 8,
-											borderWidth: 1,
-											borderColor: selected ? "#007aff" : "#cbd5e1",
-											backgroundColor: selected ? "#e0f2fe" : "transparent",
-											marginBottom: 8,
-										}}
-										onPress={() => toggleRole(role.id)}
-									>
-										<Text style={{ fontWeight: "500" }}>{role.name}</Text>
-										<Text style={{ opacity: 0.6, fontSize: 12 }}>#{role.id}</Text>
-									</TouchableOpacity>
-								);
-							})
-						) : (
-							<Text style={{ opacity: 0.6 }}>Роли не найдены</Text>
-						)}
-					</View>
-
-					<View>
-						<Text style={{ marginBottom: 6, fontWeight: "500" }}>Отделы</Text>
-						{departments.length ? (
-							departments.map((dep) => {
-								const selected = selectedDepartments.includes(dep.id);
-								return (
-									<TouchableOpacity
-										key={dep.id}
-										style={{
-											padding: 10,
-											borderRadius: 8,
-											borderWidth: 1,
-											borderColor: selected ? "#007aff" : "#cbd5e1",
-											backgroundColor: selected ? "#e0f2fe" : "transparent",
-											marginBottom: 8,
-										}}
-										onPress={() => toggleDepartment(dep.id)}
-									>
-										<Text style={{ fontWeight: "500" }}>{dep.name}</Text>
-										<Text style={{ opacity: 0.6, fontSize: 12 }}>#{dep.id}</Text>
-									</TouchableOpacity>
-								);
-							})
-						) : (
-							<Text style={{ opacity: 0.6 }}>Отделы не найдены</Text>
-						)}
-					</View>
-				</View>
-			)}
-
-			<View style={{ gap: 6 }}>
-				<Text>Конкретные пользователи (ID через запятую)</Text>
-				<TextInput
-					value={userIdsRaw}
-					onChangeText={setUserIdsRaw}
-					placeholder='Например: 1, 7, 42'
-					autoCapitalize='none'
-					style={{ borderWidth: 1, borderRadius: 8, padding: 10 }}
-				/>
-				<Text style={{ opacity: 0.6, fontSize: 12 }}>
-					Если оставить поля пустыми, объявление получат все, кто подходит по
-					целевой аудитории (или все сотрудники при отсутствии фильтров).
+			{/* Заголовок */}
+			<View
+				style={{
+					backgroundColor: "#ffffff",
+					borderRadius: 16,
+					padding: 20,
+					borderWidth: 1,
+					borderColor: "#e2e8f0",
+					shadowColor: "#000",
+					shadowOffset: { width: 0, height: 1 },
+					shadowOpacity: 0.05,
+					shadowRadius: 3,
+				}}
+			>
+				<Text style={{ fontSize: 24, fontWeight: "700", color: "#1e293b" }}>
+					Новое объявление
+				</Text>
+				<Text style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>
+					Заполните форму ниже
 				</Text>
 			</View>
 
-			<Button
-				title={submitting ? "Публикуем..." : "Опубликовать"}
+			{/* Основная форма */}
+			<View
+				style={{
+					backgroundColor: "#ffffff",
+					borderRadius: 16,
+					padding: 20,
+					borderWidth: 1,
+					borderColor: "#e2e8f0",
+					shadowColor: "#000",
+					shadowOffset: { width: 0, height: 1 },
+					shadowOpacity: 0.05,
+					shadowRadius: 3,
+				}}
+			>
+				<View style={{ gap: 16 }}>
+					<View style={{ gap: 8 }}>
+						<Text style={{ fontSize: 14, fontWeight: "600", color: "#475569" }}>
+							Заголовок
+						</Text>
+						<TextInput
+							value={title}
+							onChangeText={setTitle}
+							placeholder="Например: Срочное собрание"
+							style={{
+								borderWidth: 1.5,
+								borderColor: "#e2e8f0",
+								borderRadius: 10,
+								padding: 14,
+								fontSize: 16,
+								backgroundColor: "#f8fafc",
+							}}
+						/>
+					</View>
+
+					<View style={{ gap: 8 }}>
+						<Text style={{ fontSize: 14, fontWeight: "600", color: "#475569" }}>
+							Текст
+						</Text>
+						<TextInput
+							value={body}
+							onChangeText={setBody}
+							placeholder="Введите текст объявления"
+							multiline
+							numberOfLines={6}
+							style={{
+								borderWidth: 1.5,
+								borderColor: "#e2e8f0",
+								borderRadius: 10,
+								padding: 14,
+								textAlignVertical: "top",
+								fontSize: 16,
+								backgroundColor: "#f8fafc",
+								minHeight: 120,
+							}}
+						/>
+					</View>
+				</View>
+			</View>
+
+			{/* Получатели */}
+			<View
+				style={{
+					backgroundColor: "#ffffff",
+					borderRadius: 16,
+					padding: 20,
+					borderWidth: 1,
+					borderColor: "#e2e8f0",
+					shadowColor: "#000",
+					shadowOffset: { width: 0, height: 1 },
+					shadowOpacity: 0.05,
+					shadowRadius: 3,
+				}}
+			>
+				<Text
+					style={{
+						fontSize: 16,
+						fontWeight: "600",
+						color: "#1e293b",
+						marginBottom: 16,
+					}}
+				>
+					Кому отправить (необязательно)
+				</Text>
+
+				{loadingMeta ? (
+					<View style={{ paddingVertical: 20 }}>
+						<ActivityIndicator size="small" color="#6366f1" />
+					</View>
+				) : (
+					<View style={{ gap: 20 }}>
+						<View>
+							<Text style={{ marginBottom: 12, fontWeight: "600", color: "#64748b" }}>
+								Роли
+							</Text>
+							{roles.length ? (
+								<View style={{ gap: 8 }}>
+									{roles.map((role) => {
+										const selected = selectedRoles.includes(role.id);
+										return (
+											<TouchableOpacity
+												key={role.id}
+												style={{
+													padding: 14,
+													borderRadius: 10,
+													borderWidth: 1.5,
+													borderColor: selected ? "#6366f1" : "#e2e8f0",
+													backgroundColor: selected ? "#eef2ff" : "#f8fafc",
+												}}
+												onPress={() => toggleRole(role.id)}
+											>
+												<Text
+													style={{
+														fontWeight: "600",
+														color: selected ? "#6366f1" : "#1e293b",
+													}}
+												>
+													{role.name}
+												</Text>
+												<Text style={{ opacity: 0.6, fontSize: 12 }}>
+													#{role.id}
+												</Text>
+											</TouchableOpacity>
+										);
+									})}
+								</View>
+							) : (
+								<Text style={{ opacity: 0.6 }}>Роли не найдены</Text>
+							)}
+						</View>
+
+						<View>
+							<Text style={{ marginBottom: 12, fontWeight: "600", color: "#64748b" }}>
+								Отделы
+							</Text>
+							{departments.length ? (
+								<View style={{ gap: 8 }}>
+									{departments.map((dep) => {
+										const selected = selectedDepartments.includes(dep.id);
+										return (
+											<TouchableOpacity
+												key={dep.id}
+												style={{
+													padding: 14,
+													borderRadius: 10,
+													borderWidth: 1.5,
+													borderColor: selected ? "#6366f1" : "#e2e8f0",
+													backgroundColor: selected ? "#eef2ff" : "#f8fafc",
+												}}
+												onPress={() => toggleDepartment(dep.id)}
+											>
+												<Text
+													style={{
+														fontWeight: "600",
+														color: selected ? "#6366f1" : "#1e293b",
+													}}
+												>
+													{dep.name}
+												</Text>
+												<Text style={{ opacity: 0.6, fontSize: 12 }}>
+													#{dep.id}
+												</Text>
+											</TouchableOpacity>
+										);
+									})}
+								</View>
+							) : (
+								<Text style={{ opacity: 0.6 }}>Отделы не найдены</Text>
+							)}
+						</View>
+					</View>
+				)}
+
+				<View style={{ gap: 8, marginTop: 20 }}>
+					<Text style={{ fontWeight: "600", color: "#475569" }}>
+						Конкретные пользователи (ID через запятую)
+					</Text>
+					<TextInput
+						value={userIdsRaw}
+						onChangeText={setUserIdsRaw}
+						placeholder="Например: 1, 7, 42"
+						autoCapitalize="none"
+						style={{
+							borderWidth: 1.5,
+							borderColor: "#e2e8f0",
+							borderRadius: 10,
+							padding: 14,
+							fontSize: 16,
+							backgroundColor: "#f8fafc",
+						}}
+					/>
+					<Text style={{ opacity: 0.6, fontSize: 12, color: "#64748b" }}>
+						Если оставить поля пустыми, объявление получат все, кто подходит по целевой
+						аудитории (или все сотрудники при отсутствии фильтров).
+					</Text>
+				</View>
+			</View>
+
+			{/* Кнопка публикации */}
+			<TouchableOpacity
 				onPress={onSubmit}
 				disabled={submitting || loadingMeta}
-			/>
+				style={{
+					backgroundColor: submitting || loadingMeta ? "#94a3b8" : "#6366f1",
+					paddingVertical: 16,
+					borderRadius: 16,
+					alignItems: "center",
+				}}
+			>
+				<Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>
+					{submitting ? "Публикуем..." : "Опубликовать"}
+				</Text>
+			</TouchableOpacity>
 		</ScrollView>
 	);
 }

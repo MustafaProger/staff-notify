@@ -142,7 +142,7 @@ router.get("/:id", async (req: AuthedRequest, res: Response) => {
   res.json({ item: { ...rest, isRead } });
 });
 
-/** POST /announcements/:id/read — отметить “прочитал” (idempotent) */
+/** POST /announcements/:id/read — отметить "прочитал" (idempotent) */
 router.post("/:id/read", async (req: AuthedRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
   const id = Number(req.params.id);
@@ -182,6 +182,131 @@ router.post("/:id/read", async (req: AuthedRequest, res: Response) => {
   });
 
   res.status(204).send(); // без тела, idempotent
+});
+
+/** GET /announcements/:id/stats — статистика прочтений (только для админов и автора) */
+router.get("/:id/stats", async (req: AuthedRequest, res: Response) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  // Получаем объявление с таргетами
+  const announcement = await prisma.announcement.findUnique({
+    where: { id },
+    include: {
+      targets: true,
+      author: { select: { id: true, fullName: true } },
+    },
+  });
+
+  if (!announcement) {
+    return res.status(404).json({ message: "Announcement not found" });
+  }
+
+  // Проверяем, является ли пользователь админом или автором
+  const userWithRole = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { role: true },
+  });
+  
+  const isAdmin = userWithRole?.role.name === "admin";
+  const isAuthor = announcement.authorId === req.user.id;
+
+  if (!isAdmin && !isAuthor) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  // Если нет таргетов, значит объявление для всех
+  const hasTargets = announcement.targets.length > 0;
+
+  let targetUserIds: number[] = [];
+
+  if (hasTargets) {
+    // Собираем все уникальные userIds из таргетов
+    const roleTargets = announcement.targets.filter((t) => t.roleId).map((t) => t.roleId!);
+    const deptTargets = announcement.targets.filter((t) => t.departmentId).map((t) => t.departmentId!);
+    const userTargets = announcement.targets.filter((t) => t.userId).map((t) => t.userId!);
+
+    // Получаем пользователей по ролям
+    if (roleTargets.length > 0) {
+      const usersByRoles = await prisma.user.findMany({
+        where: { roleId: { in: roleTargets } },
+        select: { id: true },
+      });
+      targetUserIds.push(...usersByRoles.map((u) => u.id));
+    }
+
+    // Получаем пользователей по отделам
+    if (deptTargets.length > 0) {
+      const usersByDepts = await prisma.user.findMany({
+        where: { departmentId: { in: deptTargets } },
+        select: { id: true },
+      });
+      targetUserIds.push(...usersByDepts.map((u) => u.id));
+    }
+
+    // Добавляем конкретных пользователей
+    targetUserIds.push(...userTargets);
+
+    // Убираем дубликаты
+    targetUserIds = Array.from(new Set(targetUserIds));
+  } else {
+    // Если нет таргетов, получаем всех пользователей
+    const allUsers = await prisma.user.findMany({
+      select: { id: true },
+    });
+    targetUserIds = allUsers.map((u) => u.id);
+  }
+
+  // Получаем количество прочитавших
+  const readCount = await prisma.readReceipt.count({
+    where: { announcementId: id },
+  });
+
+  // Получаем список пользователей с прочтениями
+  const readReceipts = await prisma.readReceipt.findMany({
+    where: { announcementId: id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          department: { select: { name: true } },
+        },
+      },
+    },
+    orderBy: { readAt: "desc" },
+  });
+
+  const totalTargetUsers = targetUserIds.length;
+  const readPercentage = totalTargetUsers > 0 ? Math.round((readCount / totalTargetUsers) * 100) : 0;
+
+  res.json({
+    announcement: {
+      id: announcement.id,
+      title: announcement.title,
+      author: announcement.author,
+      createdAt: announcement.createdAt,
+    },
+    stats: {
+      totalTargetUsers,
+      readCount,
+      unreadCount: totalTargetUsers - readCount,
+      readPercentage,
+      hasTargets,
+    },
+    readers: readReceipts.map((rr) => ({
+      userId: rr.user.id,
+      fullName: rr.user.fullName,
+      email: rr.user.email,
+      department: rr.user.department.name,
+      readAt: rr.readAt,
+    })),
+  });
 });
 
 export default router;

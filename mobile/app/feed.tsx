@@ -129,63 +129,94 @@ export default function FeedScreen() {
 
 	if (loading) {
 		return (
-			<View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-				<ActivityIndicator />
+			<View
+				style={{
+					flex: 1,
+					alignItems: "center",
+					justifyContent: "center",
+					backgroundColor: "#f8fafc",
+				}}
+			>
+				<ActivityIndicator size="large" color="#6366f1" />
 			</View>
 		);
 	}
 
-	return (
-		<FlatList
-			data={items}
-			keyExtractor={(x) => String(x.id)}
-			refreshControl={
-				<RefreshControl
-					refreshing={refreshing}
-					onRefresh={onRefresh}
-				/>
-			}
-			contentContainerStyle={
-				items.length
-					? { padding: 12, gap: 12 }
-					: {
-							flexGrow: 1,
-							alignItems: "center",
-							justifyContent: "center",
-							padding: 12,
-					  }
-			}
-			renderItem={({ item }) => (
-			<TouchableOpacity
-				onPress={() =>
-					router.push({
-						pathname: "/announcement/[id]",
-						params: { id: String(item.id) },
-					})
+		return (
+			<FlatList
+				data={items}
+				keyExtractor={(x) => String(x.id)}
+				refreshControl={
+					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />
 				}
-					style={{
-						borderWidth: 1,
-						borderRadius: 12,
-						padding: 12,
-						borderColor: "#cbd5e1",
-					}}
-				>
-					<Text style={{ fontSize: 16, fontWeight: "600" }}>{item.title}</Text>
-					<Text
-						style={{ marginTop: 6, color: "#1f2937" }}
-						numberOfLines={3}
+				contentContainerStyle={
+					items.length
+						? { padding: 16, gap: 16, backgroundColor: "#f8fafc" }
+						: {
+								flexGrow: 1,
+								alignItems: "center",
+								justifyContent: "center",
+								padding: 12,
+						  }
+				}
+				renderItem={({ item }) => (
+					<TouchableOpacity
+						onPress={() =>
+							router.push({
+								pathname: "/announcement/[id]",
+								params: { id: String(item.id) },
+							})
+						}
+						style={{
+							backgroundColor: "#ffffff",
+							borderWidth: 1,
+							borderRadius: 16,
+							padding: 16,
+							borderColor: "#e2e8f0",
+							shadowColor: "#000",
+							shadowOffset: { width: 0, height: 1 },
+							shadowOpacity: 0.05,
+							shadowRadius: 3,
+						}}
 					>
-						{item.body}
+						<Text
+							style={{ fontSize: 18, fontWeight: "700", color: "#1e293b", marginBottom: 8 }}
+						>
+							{item.title}
+						</Text>
+						<Text style={{ marginTop: 6, color: "#64748b", lineHeight: 20 }} numberOfLines={3}>
+							{item.body}
+						</Text>
+						<View
+							style={{
+								flexDirection: "row",
+								justifyContent: "space-between",
+								alignItems: "center",
+								marginTop: 12,
+								paddingTop: 12,
+								borderTopWidth: 1,
+								borderTopColor: "#f1f5f9",
+							}}
+						>
+							<Text style={{ opacity: 0.6, fontSize: 13, color: "#64748b" }}>
+								{item.author.fullName}
+							</Text>
+							<Text style={{ opacity: 0.6, fontSize: 13, color: "#64748b" }}>
+								{new Date(item.createdAt).toLocaleString("ru-RU", {
+									day: "numeric",
+									month: "short",
+									hour: "2-digit",
+									minute: "2-digit",
+								})}
+							</Text>
+						</View>
+					</TouchableOpacity>
+				)}
+				ListEmptyComponent={
+					<Text style={{ textAlign: "center", opacity: 0.6, fontSize: 16, color: "#94a3b8" }}>
+						Нет объявлений
 					</Text>
-					<Text style={{ marginTop: 8, opacity: 0.6, fontSize: 12 }}>
-						Автор: {item.author.fullName} •{" "}
-						{new Date(item.createdAt).toLocaleString()}
-					</Text>
-				</TouchableOpacity>
-			)}
-			ListEmptyComponent={
-				<Text style={{ textAlign: "center", opacity: 0.6 }}>Нет объявлений</Text>
-			}
-		/>
-	);
+				}
+			/>
+		);
 }

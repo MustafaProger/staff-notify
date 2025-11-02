@@ -97,87 +97,171 @@ export default function RegisterScreen() {
 
 	return (
 		<ScrollView
-			contentContainerStyle={{ padding: 16 }}
-			keyboardShouldPersistTaps='handled'
+			contentContainerStyle={{ padding: 20, backgroundColor: "#f8fafc" }}
+			keyboardShouldPersistTaps="handled"
 		>
-			<View style={{ gap: 12 }}>
-				<Text style={{ fontSize: 22, fontWeight: "600" }}>Регистрация</Text>
-
-				<Text>ФИО</Text>
-				<TextInput
-					value={fullName}
-					onChangeText={setFullName}
-					placeholder='Иван Иванов'
-					style={{ borderWidth: 1, padding: 10, borderRadius: 8 }}
-				/>
-
-				<Text>Email</Text>
-				<TextInput
-					value={email}
-					onChangeText={setEmail}
-					autoCapitalize='none'
-					keyboardType='email-address'
-					placeholder='user@corp.local'
-					style={{ borderWidth: 1, padding: 10, borderRadius: 8 }}
-				/>
-
-				<Text>Пароль</Text>
-				<TextInput
-					value={password}
-					onChangeText={setPassword}
-					secureTextEntry
-					placeholder='Не менее 8 символов'
-					style={{ borderWidth: 1, padding: 10, borderRadius: 8 }}
-				/>
-
-				<Text>Отдел</Text>
-				{loadingDeps ? (
-					<View style={{ paddingVertical: 16 }}>
-						<ActivityIndicator />
-					</View>
-				) : departments.length ? (
-					<View>
-						{departments.map((dep) => {
-							const selected = dep.id === departmentId;
-							return (
-								<TouchableOpacity
-									key={dep.id}
-									style={{
-										padding: 10,
-										borderRadius: 8,
-										borderWidth: 1,
-										borderColor: selected ? "#007aff" : "#cbd5e1",
-										backgroundColor: selected ? "#e0f2fe" : "transparent",
-										marginBottom: 8,
-									}}
-									onPress={() => setDepartmentId(dep.id)}
-								>
-									<Text style={{ fontWeight: "500" }}>{dep.name}</Text>
-									<Text style={{ opacity: 0.6, fontSize: 12 }}>#{dep.id}</Text>
-								</TouchableOpacity>
-							);
-						})}
-					</View>
-				) : (
-					<Text style={{ opacity: 0.7 }}>
-						Нет доступных подразделений. Обратитесь к администратору.
-					</Text>
-				)}
-
-				<Button
-					title={submitting ? "Отправляем..." : "Создать аккаунт"}
-					onPress={onSubmit}
-					disabled={submitting || loadingDeps}
-				/>
-
-				<TouchableOpacity
-					onPress={() => router.back()}
-					disabled={submitting}
+			<View
+				style={{
+					backgroundColor: "#ffffff",
+					borderRadius: 16,
+					padding: 24,
+					shadowColor: "#000",
+					shadowOffset: { width: 0, height: 2 },
+					shadowOpacity: 0.1,
+					shadowRadius: 8,
+				}}
+			>
+				<Text
+					style={{
+						fontSize: 28,
+						fontWeight: "700",
+						marginBottom: 8,
+						color: "#1e293b",
+					}}
 				>
-					<Text style={{ color: "#007aff", textAlign: "center", marginTop: 4 }}>
-						Уже есть аккаунт? Войти
-					</Text>
-				</TouchableOpacity>
+					Регистрация
+				</Text>
+				<Text style={{ fontSize: 16, color: "#64748b", marginBottom: 32 }}>
+					Создайте новый аккаунт
+				</Text>
+
+				<View style={{ gap: 20 }}>
+					<View style={{ gap: 8 }}>
+						<Text style={{ fontSize: 14, fontWeight: "600", color: "#475569" }}>
+							ФИО
+						</Text>
+						<TextInput
+							value={fullName}
+							onChangeText={setFullName}
+							placeholder="Иван Иванов"
+							style={{
+								borderWidth: 1.5,
+								borderColor: "#e2e8f0",
+								padding: 14,
+								borderRadius: 10,
+								fontSize: 16,
+								backgroundColor: "#f8fafc",
+							}}
+						/>
+					</View>
+
+					<View style={{ gap: 8 }}>
+						<Text style={{ fontSize: 14, fontWeight: "600", color: "#475569" }}>
+							Email
+						</Text>
+						<TextInput
+							value={email}
+							onChangeText={setEmail}
+							autoCapitalize="none"
+							keyboardType="email-address"
+							placeholder="user@corp.local"
+							style={{
+								borderWidth: 1.5,
+								borderColor: "#e2e8f0",
+								padding: 14,
+								borderRadius: 10,
+								fontSize: 16,
+								backgroundColor: "#f8fafc",
+							}}
+						/>
+					</View>
+
+					<View style={{ gap: 8 }}>
+						<Text style={{ fontSize: 14, fontWeight: "600", color: "#475569" }}>
+							Пароль
+						</Text>
+						<TextInput
+							value={password}
+							onChangeText={setPassword}
+							secureTextEntry
+							placeholder="Не менее 8 символов"
+							style={{
+								borderWidth: 1.5,
+								borderColor: "#e2e8f0",
+								padding: 14,
+								borderRadius: 10,
+								fontSize: 16,
+								backgroundColor: "#f8fafc",
+							}}
+						/>
+					</View>
+
+					<View style={{ gap: 8 }}>
+						<Text style={{ fontSize: 14, fontWeight: "600", color: "#475569" }}>
+							Отдел
+						</Text>
+						{loadingDeps ? (
+							<View style={{ paddingVertical: 16 }}>
+								<ActivityIndicator size="small" color="#6366f1" />
+							</View>
+						) : departments.length ? (
+							<View style={{ gap: 8 }}>
+								{departments.map((dep) => {
+									const selected = dep.id === departmentId;
+									return (
+										<TouchableOpacity
+											key={dep.id}
+											style={{
+												padding: 14,
+												borderRadius: 10,
+												borderWidth: 1.5,
+												borderColor: selected ? "#6366f1" : "#e2e8f0",
+												backgroundColor: selected ? "#eef2ff" : "#f8fafc",
+											}}
+											onPress={() => setDepartmentId(dep.id)}
+										>
+											<Text
+												style={{
+													fontWeight: "600",
+													color: selected ? "#6366f1" : "#1e293b",
+												}}
+											>
+												{dep.name}
+											</Text>
+											<Text style={{ opacity: 0.6, fontSize: 12 }}>
+												#{dep.id}
+											</Text>
+										</TouchableOpacity>
+									);
+								})}
+							</View>
+						) : (
+							<Text style={{ opacity: 0.7, padding: 12 }}>
+								Нет доступных подразделений. Обратитесь к администратору.
+							</Text>
+						)}
+					</View>
+
+					<TouchableOpacity
+						onPress={onSubmit}
+						disabled={submitting || loadingDeps}
+						style={{
+							backgroundColor:
+								submitting || loadingDeps ? "#94a3b8" : "#6366f1",
+							paddingVertical: 14,
+							borderRadius: 10,
+							alignItems: "center",
+							marginTop: 8,
+						}}
+					>
+						<Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>
+							{submitting ? "Отправляем..." : "Создать аккаунт"}
+						</Text>
+					</TouchableOpacity>
+
+					<TouchableOpacity onPress={() => router.back()} disabled={submitting}>
+						<Text
+							style={{
+								color: "#6366f1",
+								textAlign: "center",
+								fontSize: 14,
+								fontWeight: "500",
+							}}
+						>
+							Уже есть аккаунт? Войти
+						</Text>
+					</TouchableOpacity>
+				</View>
 			</View>
 		</ScrollView>
 	);
