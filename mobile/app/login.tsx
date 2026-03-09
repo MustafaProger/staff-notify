@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, Button, Alert, TouchableOpacity, SafeAreaView } from "react-native";
 import { useRouter } from "expo-router";
 import { login, saveToken, me } from "../lib/api";
 
@@ -24,7 +24,7 @@ export default function LoginScreen() {
 	};
 
 	return (
-		<View
+		<SafeAreaView
 			style={{
 				flex: 1,
 				backgroundColor: "#f8fafc",
@@ -131,6 +131,6 @@ export default function LoginScreen() {
 					</TouchableOpacity>
 				</View>
 			</View>
-		</View>
+		</SafeAreaView>
 	);
 }

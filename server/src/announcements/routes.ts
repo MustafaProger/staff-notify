@@ -23,28 +23,48 @@ router.get("/", async (req: AuthedRequest, res: Response) => {
 	const { limit, offset } = ListQuerySchema.parse(req.query);
 	const { id: userId, roleId, departmentId } = req.user;
 
-	// ВАЖНО: никаких "as const" — иначе получится readonly-массив
-	const where: Prisma.AnnouncementWhereInput = {
-		OR: [
-			{ targets: { some: { roleId } } },
-			{ targets: { some: { departmentId } } },
-			{ targets: { some: { userId } } },
-		],
-	};
+	// Проверяем, является ли пользователь администратором.
+	// Админ видит все объявления, остальные — только таргетированные на них.
+	const currentUser = await prisma.user.findUnique({
+		where: { id: userId },
+		include: { role: true },
+	});
+	const isAdmin = currentUser?.role?.name === "admin";
 
-	const [total, items] = await Promise.all([
+	// ВАЖНО: никаких "as const" — иначе получится readonly-массив
+	const where: Prisma.AnnouncementWhereInput = isAdmin
+		? {}
+		: {
+				OR: [
+					{ targets: { some: { roleId } } },
+					{ targets: { some: { departmentId } } },
+					{ targets: { some: { userId } } },
+				],
+		  };
+
+	const [total, rawItems] = await Promise.all([
 		prisma.announcement.count({ where }),
 		prisma.announcement.findMany({
 			where,
 			include: {
 				author: { select: { id: true, fullName: true, email: true } },
-				// targets: true,
+				_count: {
+					select: {
+						readReceipts: { where: { userId } },
+					},
+				},
 			},
 			orderBy: { createdAt: "desc" },
 			skip: offset,
 			take: limit,
 		}),
 	]);
+
+	const items = rawItems.map((ann: any) => {
+		const isRead = ann._count?.readReceipts > 0;
+		const { _count, ...rest } = ann;
+		return { ...rest, isRead };
+	});
 
 	res.json({
 		items,
@@ -151,15 +171,24 @@ router.post("/:id/read", async (req: AuthedRequest, res: Response) => {
   const userId = req.user.id;
 
   // проверим, что объявление существует и доступно этому пользователю
+  // Админ может помечать любые объявления, даже если не входит в таргет.
+  const userWithRole = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  const isAdmin = userWithRole?.role?.name === "admin";
+
   const canSee = await prisma.announcement.findFirst({
-    where: {
-      id,
-      OR: [
-        { targets: { some: { roleId: req.user.roleId } } },
-        { targets: { some: { departmentId: req.user.departmentId } } },
-        { targets: { some: { userId } } },
-      ],
-    },
+    where: isAdmin
+      ? { id }
+      : {
+          id,
+          OR: [
+            { targets: { some: { roleId: req.user.roleId } } },
+            { targets: { some: { departmentId: req.user.departmentId } } },
+            { targets: { some: { userId } } },
+          ],
+        },
     select: { id: true },
   });
   if (!canSee) return res.status(404).json({ message: "Announcement not available" });

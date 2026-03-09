@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders } from "axios";
 import * as SecureStore from "expo-secure-store";
 
-const API_BASE = "http://192.168.1.6:3000"; // на реальном устройстве замени на IP твоего компа
+const API_BASE = "http://192.168.1.11:3000"; // на реальном устройстве замени на IP твоего компа
 export const api = axios.create({
 	baseURL: API_BASE,
 	headers: { "Content-Type": "application/json" },

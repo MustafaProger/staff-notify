@@ -8,6 +8,7 @@ import {
 	ScrollView,
 	ActivityIndicator,
 	TouchableOpacity,
+	SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -133,6 +134,34 @@ export default function CreateAnnouncementScreen() {
 	};
 
 	return (
+		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+			<View
+				style={{
+					paddingTop: 12,
+					paddingHorizontal: 16,
+					paddingBottom: 8,
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<TouchableOpacity onPress={() => router.back()}>
+					<Text style={{ color: "#6366f1", fontWeight: "600", fontSize: 16 }}>
+						Назад
+					</Text>
+				</TouchableOpacity>
+				<Text
+					style={{
+						fontSize: 18,
+						fontWeight: "700",
+						color: "#0f172a",
+					}}
+				>
+					Новое объявление
+				</Text>
+				<View style={{ width: 48 }} />
+			</View>
+
 		<ScrollView
 			contentContainerStyle={{
 				padding: 20,
@@ -376,5 +405,6 @@ export default function CreateAnnouncementScreen() {
 				</Text>
 			</TouchableOpacity>
 		</ScrollView>
+		</SafeAreaView>
 	);
 }

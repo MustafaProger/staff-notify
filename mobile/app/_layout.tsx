@@ -10,28 +10,28 @@ export default function Layout() {
 			/>
 			<Stack.Screen
 				name='login'
-				options={{ title: "Вход" }}
+				options={{ headerShown: false }}
 			/>
 			<Stack.Screen
 				name='register'
-				options={{ title: "Регистрация" }}
+				options={{ headerShown: false }}
 			/>
 			<Stack.Screen
 				name='feed'
-				options={{ title: "Объявления" }}
+				options={{ headerShown: false }}
 			/>
-		<Stack.Screen
-			name='announcement/[id]'
-			options={{ title: "Объявление" }}
-		/>
-		<Stack.Screen
-			name='announcement/stats'
-			options={{ title: "Статистика" }}
-		/>
-		<Stack.Screen
-			name='announcements/create'
-			options={{ title: "Новое объявление" }}
-		/>
+			<Stack.Screen
+				name='announcement/[id]'
+				options={{ headerShown: false }}
+			/>
+			<Stack.Screen
+				name='announcement/stats'
+				options={{ headerShown: false }}
+			/>
+			<Stack.Screen
+				name='announcements/create'
+				options={{ headerShown: false }}
+			/>
 		</Stack>
 	);
 }

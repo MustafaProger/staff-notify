@@ -6,6 +6,7 @@ import {
 	ActivityIndicator,
 	Alert,
 	TouchableOpacity,
+	SafeAreaView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -75,7 +76,7 @@ export default function AnnouncementDetailScreen() {
 
 	if (loading) {
 		return (
-			<View
+			<SafeAreaView
 				style={{
 					flex: 1,
 					justifyContent: "center",
@@ -84,13 +85,13 @@ export default function AnnouncementDetailScreen() {
 				}}
 			>
 				<ActivityIndicator size="large" color="#6366f1" />
-			</View>
+			</SafeAreaView>
 		);
 	}
 
 	if (!item) {
 		return (
-			<View
+			<SafeAreaView
 				style={{
 					flex: 1,
 					justifyContent: "center",
@@ -99,7 +100,7 @@ export default function AnnouncementDetailScreen() {
 				}}
 			>
 				<Text style={{ fontSize: 16, color: "#6b7280" }}>Объявление не найдено</Text>
-			</View>
+			</SafeAreaView>
 		);
 	}
 
@@ -107,6 +108,34 @@ export default function AnnouncementDetailScreen() {
 		profile?.role.name === "admin" || item?.author.id === profile?.id;
 
 	return (
+		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+			<View
+				style={{
+					paddingTop: 12,
+					paddingHorizontal: 16,
+					paddingBottom: 8,
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<TouchableOpacity onPress={() => router.back()}>
+					<Text style={{ color: "#6366f1", fontWeight: "600", fontSize: 16 }}>
+						Назад
+					</Text>
+				</TouchableOpacity>
+				<Text
+					style={{
+						fontSize: 18,
+						fontWeight: "700",
+						color: "#0f172a",
+					}}
+				>
+					Объявление
+				</Text>
+				<View style={{ width: 48 }} />
+			</View>
+
 		<ScrollView
 			contentContainerStyle={{ padding: 16, gap: 20, backgroundColor: "#f8fafc" }}
 		>
@@ -255,5 +284,6 @@ export default function AnnouncementDetailScreen() {
 				</TouchableOpacity>
 			)}
 		</ScrollView>
+		</SafeAreaView>
 	);
 }

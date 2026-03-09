@@ -46,13 +46,21 @@ async function main() {
 	const adminPass = await bcrypt.hash("Admin123!", 10);
 	const userPass = await bcrypt.hash("User123!", 10);
 
-	// ─── Пользователи (15 шт.) ───────────────────────
+	// ─── Пользователи (включая тестового user1) ──────
 	const users = [
 		{
 			email: "admin@corp.local",
 			fullName: "System Admin",
 			passwordHash: adminPass,
 			roleId: adminRole.id,
+			departmentId: itDept.id,
+		},
+		// Тестовый пользователь из README
+		{
+			email: "user1@corp.local",
+			fullName: "Test Employee 1",
+			passwordHash: userPass,
+			roleId: employeeRole.id,
 			departmentId: itDept.id,
 		},
 		// IT

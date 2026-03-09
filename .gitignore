@@ -4,6 +4,7 @@ dist
 .env
 .env.*
 *.log
+.pnpm-store/
 
 # Prisma
 server/prisma/dev.db

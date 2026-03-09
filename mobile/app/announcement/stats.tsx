@@ -6,6 +6,7 @@ import {
 	ActivityIndicator,
 	Alert,
 	TouchableOpacity,
+	SafeAreaView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AnnouncementStats, getAnnouncementStats } from "../../lib/api";
@@ -49,25 +50,57 @@ export default function AnnouncementStatsScreen() {
 
 	if (loading) {
 		return (
-			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+			<SafeAreaView
+				style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+			>
 				<ActivityIndicator size="large" color="#6366f1" />
-			</View>
+			</SafeAreaView>
 		);
 	}
 
 	if (!data) {
-		return (
-			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-				<Text style={{ fontSize: 16, color: "#6b7280" }}>
-					Данные не найдены
-				</Text>
-			</View>
-		);
-	}
+	return (
+		<SafeAreaView
+			style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+		>
+			<Text style={{ fontSize: 16, color: "#6b7280" }}>
+				Данные не найдены
+			</Text>
+		</SafeAreaView>
+	);
+}
 
 	const { announcement, stats, readers } = data;
 
 	return (
+		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+			<View
+				style={{
+					paddingTop: 12,
+					paddingHorizontal: 16,
+					paddingBottom: 8,
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<TouchableOpacity onPress={() => router.back()}>
+					<Text style={{ color: "#6366f1", fontWeight: "600", fontSize: 16 }}>
+						Назад
+					</Text>
+				</TouchableOpacity>
+				<Text
+					style={{
+						fontSize: 18,
+						fontWeight: "700",
+						color: "#0f172a",
+					}}
+				>
+					Статистика
+				</Text>
+				<View style={{ width: 48 }} />
+			</View>
+
 		<ScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
 			{/* Заголовок */}
 			<View
@@ -248,6 +281,7 @@ export default function AnnouncementStatsScreen() {
 				)}
 			</View>
 		</ScrollView>
+		</SafeAreaView>
 	);
 }
 

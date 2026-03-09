@@ -12,8 +12,9 @@ import {
 	RefreshControl,
 	TouchableOpacity,
 	Alert,
+	SafeAreaView,
 } from "react-native";
-import { useFocusEffect, useNavigation, useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import {
 	Announcement,
 	DetailedUser,
@@ -24,7 +25,6 @@ import {
 
 export default function FeedScreen() {
 	const router = useRouter();
-	const navigation = useNavigation();
 	const [items, setItems] = useState<Announcement[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
@@ -96,25 +96,7 @@ export default function FeedScreen() {
 		}, [fetchAnnouncements])
 	);
 
-	useEffect(() => {
-		navigation.setOptions({
-			headerRight: () => (
-		<View style={{ flexDirection: "row", alignItems: "center" }}>
-			{profile?.role?.name !== "employee" && (
-				<TouchableOpacity
-					onPress={() => router.push({ pathname: "/announcements/create" })}
-					style={{ marginRight: 16 }}
-				>
-					<Text style={{ color: "#007aff", fontWeight: "600" }}>Создать</Text>
-				</TouchableOpacity>
-					)}
-					<TouchableOpacity onPress={handleLogout}>
-						<Text style={{ color: "#ff3b30", fontWeight: "600" }}>Выйти</Text>
-					</TouchableOpacity>
-				</View>
-			),
-		});
-	}, [navigation, profile, router, handleLogout]);
+	// заголовок теперь рисуем внутри экрана, хедер навигации скрыт
 
 	const onRefresh = useCallback(async () => {
 		setRefreshing(true);
@@ -129,7 +111,7 @@ export default function FeedScreen() {
 
 	if (loading) {
 		return (
-			<View
+			<SafeAreaView
 				style={{
 					flex: 1,
 					alignItems: "center",
@@ -138,11 +120,76 @@ export default function FeedScreen() {
 				}}
 			>
 				<ActivityIndicator size="large" color="#6366f1" />
-			</View>
+			</SafeAreaView>
 		);
 	}
 
-		return (
+	return (
+		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+			<View
+				style={{
+					paddingTop: 12,
+					paddingHorizontal: 16,
+					paddingBottom: 8,
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<Text
+					style={{
+						fontSize: 24,
+						fontWeight: "700",
+						color: "#0f172a",
+					}}
+				>
+					Объявления
+				</Text>
+				<View style={{ flexDirection: "row", alignItems: "center" }}>
+					{profile?.role?.name !== "employee" && (
+						<TouchableOpacity
+							onPress={() => router.push({ pathname: "/announcements/create" })}
+							style={{
+								marginRight: 8,
+								paddingHorizontal: 12,
+								paddingVertical: 6,
+								borderRadius: 999,
+								backgroundColor: "#6366f1",
+							}}
+						>
+							<Text
+								style={{
+									color: "#ffffff",
+									fontWeight: "600",
+									fontSize: 14,
+								}}
+							>
+								Создать
+							</Text>
+						</TouchableOpacity>
+					)}
+					<TouchableOpacity
+						onPress={handleLogout}
+						style={{
+							paddingHorizontal: 12,
+							paddingVertical: 6,
+							borderRadius: 999,
+							backgroundColor: "#fee2e2",
+						}}
+					>
+						<Text
+							style={{
+								color: "#ef4444",
+								fontWeight: "600",
+								fontSize: 14,
+							}}
+						>
+							Выйти
+						</Text>
+					</TouchableOpacity>
+				</View>
+			</View>
+
 			<FlatList
 				data={items}
 				keyExtractor={(x) => String(x.id)}
@@ -159,64 +206,87 @@ export default function FeedScreen() {
 								padding: 12,
 						  }
 				}
-				renderItem={({ item }) => (
-					<TouchableOpacity
-						onPress={() =>
-							router.push({
-								pathname: "/announcement/[id]",
-								params: { id: String(item.id) },
-							})
-						}
-						style={{
-							backgroundColor: "#ffffff",
-							borderWidth: 1,
-							borderRadius: 16,
-							padding: 16,
-							borderColor: "#e2e8f0",
-							shadowColor: "#000",
-							shadowOffset: { width: 0, height: 1 },
-							shadowOpacity: 0.05,
-							shadowRadius: 3,
-						}}
-					>
-						<Text
-							style={{ fontSize: 18, fontWeight: "700", color: "#1e293b", marginBottom: 8 }}
-						>
-							{item.title}
-						</Text>
-						<Text style={{ marginTop: 6, color: "#64748b", lineHeight: 20 }} numberOfLines={3}>
-							{item.body}
-						</Text>
-						<View
+				renderItem={({ item }) => {
+					const isRead = Boolean(item.isRead);
+					return (
+						<TouchableOpacity
+							onPress={() =>
+								router.push({
+									pathname: "/announcement/[id]",
+									params: { id: String(item.id) },
+								})
+							}
 							style={{
-								flexDirection: "row",
-								justifyContent: "space-between",
-								alignItems: "center",
-								marginTop: 12,
-								paddingTop: 12,
-								borderTopWidth: 1,
-								borderTopColor: "#f1f5f9",
+								backgroundColor: isRead ? "#ffffff" : "#eef2ff",
+								borderWidth: 1,
+								borderRadius: 16,
+								padding: 16,
+								borderColor: isRead ? "#e2e8f0" : "#6366f1",
+								shadowColor: "#000",
+								shadowOffset: { width: 0, height: 1 },
+								shadowOpacity: 0.05,
+								shadowRadius: 3,
 							}}
 						>
-							<Text style={{ opacity: 0.6, fontSize: 13, color: "#64748b" }}>
-								{item.author.fullName}
+							<Text
+								style={{
+									fontSize: 18,
+									fontWeight: isRead ? "600" : "700",
+									color: isRead ? "#475569" : "#111827",
+									marginBottom: 8,
+								}}
+							>
+								{item.title}
 							</Text>
-							<Text style={{ opacity: 0.6, fontSize: 13, color: "#64748b" }}>
-								{new Date(item.createdAt).toLocaleString("ru-RU", {
-									day: "numeric",
-									month: "short",
-									hour: "2-digit",
-									minute: "2-digit",
-								})}
+							<Text
+								style={{ marginTop: 6, color: "#64748b", lineHeight: 20 }}
+								numberOfLines={3}
+							>
+								{item.body}
 							</Text>
-						</View>
-					</TouchableOpacity>
-				)}
+							<View
+								style={{
+									flexDirection: "row",
+									justifyContent: "space-between",
+									alignItems: "center",
+									marginTop: 12,
+									paddingTop: 12,
+									borderTopWidth: 1,
+									borderTopColor: "#f1f5f9",
+								}}
+							>
+								<Text style={{ opacity: 0.6, fontSize: 13, color: "#64748b" }}>
+									{item.author.fullName}
+								</Text>
+								<View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+									{/* Индикатор статуса — только точка без текста */}
+									<View
+										style={{
+											width: 10,
+											height: 10,
+											borderRadius: 5,
+											backgroundColor: isRead ? "#cbd5f5" : "#6366f1",
+										}}
+									/>
+									<Text style={{ opacity: 0.6, fontSize: 13, color: "#64748b" }}>
+										{new Date(item.createdAt).toLocaleString("ru-RU", {
+											day: "numeric",
+											month: "short",
+											hour: "2-digit",
+											minute: "2-digit",
+										})}
+									</Text>
+								</View>
+							</View>
+						</TouchableOpacity>
+					);
+				}}
 				ListEmptyComponent={
 					<Text style={{ textAlign: "center", opacity: 0.6, fontSize: 16, color: "#94a3b8" }}>
 						Нет объявлений
 					</Text>
 				}
 			/>
-		);
+		</SafeAreaView>
+	);
 }
