@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders } from "axios";
 import * as SecureStore from "expo-secure-store";
 
-const API_BASE = "http://192.168.1.11:3000"; // на реальном устройстве замени на IP твоего компа
+const API_BASE = "http://192.168.1.6:3000"; // на реальном устройстве замени на IP твоего компа
 export const api = axios.create({
 	baseURL: API_BASE,
 	headers: { "Content-Type": "application/json" },
@@ -136,8 +136,17 @@ export async function createAnnouncement(payload: CreateAnnouncementPayload) {
 	return data as { item: Announcement };
 }
 
+export async function updateAnnouncement(id: number, payload: CreateAnnouncementPayload) {
+	const { data } = await api.patch(`/announcements/${id}`, payload);
+	return data as { item: Announcement };
+}
+
 export async function markAnnouncementRead(id: number) {
 	await api.post(`/announcements/${id}/read`);
+}
+
+export async function deleteAnnouncement(id: number) {
+	await api.delete(`/announcements/${id}`);
 }
 
 export type AnnouncementStatsReader = {

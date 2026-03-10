@@ -28,7 +28,8 @@ export default function LoginScreen() {
 			style={{
 				flex: 1,
 				backgroundColor: "#f8fafc",
-				padding: 20,
+				paddingHorizontal: 32,
+				paddingVertical: 24,
 				justifyContent: "center",
 			}}
 		>

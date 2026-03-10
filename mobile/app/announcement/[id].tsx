@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import {
 	Announcement,
 	DetailedUser,
+	deleteAnnouncement,
 	getAnnouncement,
 	markAnnouncementRead,
 	me,
@@ -25,6 +26,7 @@ export default function AnnouncementDetailScreen() {
 	const [item, setItem] = useState<AnnouncementWithStatus | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [marking, setMarking] = useState(false);
+	const [deleting, setDeleting] = useState(false);
 	const [profile, setProfile] = useState<DetailedUser | null>(null);
 
 	const numericId = Number(id);
@@ -106,6 +108,36 @@ export default function AnnouncementDetailScreen() {
 
 	const isAdminOrAuthor =
 		profile?.role.name === "admin" || item?.author.id === profile?.id;
+	const isAdmin = profile?.role.name === "admin";
+
+	const onDelete = () => {
+		if (!item) return;
+		Alert.alert(
+			"Удалить объявление?",
+			`«${item.title}» будет удалено без возможности восстановления.`,
+			[
+				{ text: "Отмена", style: "cancel" },
+				{
+					text: "Удалить",
+					style: "destructive",
+					onPress: async () => {
+						try {
+							setDeleting(true);
+							await deleteAnnouncement(numericId);
+							router.replace("/feed");
+						} catch (err: any) {
+							Alert.alert(
+								"Ошибка",
+								err?.response?.data?.message ?? "Не удалось удалить объявление"
+							);
+						} finally {
+							setDeleting(false);
+						}
+					},
+				},
+			]
+		);
+	};
 
 	return (
 		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
@@ -193,6 +225,59 @@ export default function AnnouncementDetailScreen() {
 					{item.body}
 				</Text>
 			</View>
+
+			{/* Кнопка редактирования для админа и автора */}
+			{isAdminOrAuthor && (
+				<TouchableOpacity
+					onPress={() => router.push(`/announcement/edit/${item.id}`)}
+					style={{
+						backgroundColor: "#eef2ff",
+						borderRadius: 16,
+						padding: 16,
+						borderWidth: 1,
+						borderColor: "#c7d2fe",
+						flexDirection: "row",
+						alignItems: "center",
+						justifyContent: "space-between",
+					}}
+				>
+					<Text style={{ fontSize: 16, fontWeight: "600", color: "#6366f1" }}>
+						Редактировать
+					</Text>
+					<View
+						style={{
+							width: 32,
+							height: 32,
+							borderRadius: 16,
+							backgroundColor: "#6366f1",
+							alignItems: "center",
+							justifyContent: "center",
+						}}
+					>
+						<Text style={{ color: "#ffffff", fontSize: 18 }}>✎</Text>
+					</View>
+				</TouchableOpacity>
+			)}
+
+			{/* Кнопка удаления только для админа */}
+			{isAdmin && (
+				<TouchableOpacity
+					onPress={onDelete}
+					disabled={deleting}
+					style={{
+						backgroundColor: "#fee2e2",
+						borderRadius: 16,
+						padding: 16,
+						borderWidth: 1,
+						borderColor: "#fecaca",
+						alignItems: "center",
+					}}
+				>
+					<Text style={{ fontSize: 16, fontWeight: "600", color: "#dc2626" }}>
+						{deleting ? "Удаление..." : "Удалить объявление"}
+					</Text>
+				</TouchableOpacity>
+			)}
 
 			{/* Кнопка статистики для админов и авторов */}
 			{isAdminOrAuthor && (

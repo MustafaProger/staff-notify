@@ -133,7 +133,7 @@ router.post("/", async (req: AuthedRequest, res: Response) => {
 	}
 });
 
-/** GET /announcements/:id — деталка + isRead */
+/** GET /announcements/:id — деталка + isRead + targets (для редактирования) */
 router.get("/:id", async (req: AuthedRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
   const id = Number(req.params.id);
@@ -145,9 +145,10 @@ router.get("/:id", async (req: AuthedRequest, res: Response) => {
     where: { id },
     include: {
       author: { select: { id: true, fullName: true, email: true } },
+      targets: true,
       _count: {
         select: {
-          readReceipts: { where: { userId } }, // Prisma 6.x поддерживает where в _count
+          readReceipts: { where: { userId } },
         },
       },
     },
@@ -156,7 +157,6 @@ router.get("/:id", async (req: AuthedRequest, res: Response) => {
   if (!item) return res.status(404).json({ message: "Not found" });
 
   const isRead = (item._count as any)?.readReceipts > 0;
-  // уберём служебный _count из ответа
   const { _count, ...rest } = item as any;
 
   res.json({ item: { ...rest, isRead } });
@@ -211,6 +211,84 @@ router.post("/:id/read", async (req: AuthedRequest, res: Response) => {
   });
 
   res.status(204).send(); // без тела, idempotent
+});
+
+/** PATCH /announcements/:id — редактирование (админ или автор) */
+router.patch("/:id", async (req: AuthedRequest, res: Response) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const announcement = await prisma.announcement.findUnique({
+    where: { id },
+    include: { author: { select: { id: true } } },
+  });
+  if (!announcement) return res.status(404).json({ message: "Announcement not found" });
+
+  const userWithRole = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { role: true },
+  });
+  const isAdmin = userWithRole?.role?.name === "admin";
+  const isAuthor = announcement.authorId === req.user.id;
+  if (!isAdmin && !isAuthor) {
+    return res.status(403).json({ message: "Только администратор или автор может редактировать" });
+  }
+
+  try {
+    const dto = CreateAnnouncementSchema.parse(req.body) as CreateAnnouncementDto;
+
+    const roleIds = Array.from(new Set(dto.targets.roles ?? []));
+    const deptIds = Array.from(new Set(dto.targets.departments ?? []));
+    const userIds = Array.from(new Set(dto.targets.users ?? []));
+
+    const targetsData: { roleId?: number; departmentId?: number; userId?: number }[] = [];
+    for (const r of roleIds) targetsData.push({ roleId: r });
+    for (const d of deptIds) targetsData.push({ departmentId: d });
+    for (const u of userIds) targetsData.push({ userId: u });
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.announcementTarget.deleteMany({ where: { announcementId: id } });
+      const result = await tx.announcement.update({
+        where: { id },
+        data: {
+          title: dto.title,
+          body: dto.body,
+          ...(targetsData.length > 0
+            ? {
+                targets: {
+                  createMany: { data: targetsData, skipDuplicates: true },
+                },
+              }
+            : {}),
+        },
+        include: {
+          author: { select: { id: true, fullName: true, email: true } },
+        },
+      });
+      return result;
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: "announcement_updated",
+        entity: "announcement",
+        entityId: id,
+        metadata: { updatedBy: req.user.id, title: dto.title },
+      },
+    });
+
+    return res.json({ item: updated });
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation error", issues: e.issues });
+    }
+    console.error(e);
+    return res.status(500).json({ message: "Internal error" });
+  }
 });
 
 /** GET /announcements/:id/stats — статистика прочтений (только для админов и автора) */
@@ -336,6 +414,46 @@ router.get("/:id/stats", async (req: AuthedRequest, res: Response) => {
       readAt: rr.readAt,
     })),
   });
+});
+
+/** DELETE /announcements/:id — удаление объявления (только админ) */
+router.delete("/:id", async (req: AuthedRequest, res: Response) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const userWithRole = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { role: true },
+  });
+  if (userWithRole?.role?.name !== "admin") {
+    return res.status(403).json({ message: "Только администратор может удалять объявления" });
+  }
+
+  const announcement = await prisma.announcement.findUnique({ where: { id } });
+  if (!announcement) {
+    return res.status(404).json({ message: "Announcement not found" });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.readReceipt.deleteMany({ where: { announcementId: id } });
+    await tx.announcementTarget.deleteMany({ where: { announcementId: id } });
+    await tx.announcement.delete({ where: { id } });
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      action: "announcement_deleted",
+      entity: "announcement",
+      entityId: id,
+      metadata: { deletedBy: req.user.id, title: announcement.title },
+    },
+  });
+
+  res.status(204).send();
 });
 
 export default router;

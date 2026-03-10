@@ -29,6 +29,10 @@ export default function Layout() {
 				options={{ headerShown: false }}
 			/>
 			<Stack.Screen
+				name='announcement/edit/[id]'
+				options={{ headerShown: false }}
+			/>
+			<Stack.Screen
 				name='announcements/create'
 				options={{ headerShown: false }}
 			/>

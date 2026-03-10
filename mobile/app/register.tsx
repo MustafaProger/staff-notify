@@ -126,7 +126,11 @@ export default function RegisterScreen() {
 			</View>
 
 		<ScrollView
-			contentContainerStyle={{ padding: 20, backgroundColor: "#f8fafc" }}
+			contentContainerStyle={{
+				paddingHorizontal: 32,
+				paddingVertical: 24,
+				backgroundColor: "#f8fafc",
+			}}
 			keyboardShouldPersistTaps="handled"
 		>
 			<View
