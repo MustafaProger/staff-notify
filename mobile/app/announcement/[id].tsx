@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
 	View,
 	Text,
@@ -8,7 +8,7 @@ import {
 	TouchableOpacity,
 	SafeAreaView,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import {
 	Announcement,
 	DetailedUser,
@@ -56,9 +56,11 @@ export default function AnnouncementDetailScreen() {
 		}
 	}, [numericId, router]);
 
-	useEffect(() => {
-		load();
-	}, [load]);
+	useFocusEffect(
+		useCallback(() => {
+			load();
+		}, [load])
+	);
 
 	const onMarkRead = async () => {
 		if (!item || item.isRead) return;
@@ -259,26 +261,6 @@ export default function AnnouncementDetailScreen() {
 				</TouchableOpacity>
 			)}
 
-			{/* Кнопка удаления только для админа */}
-			{isAdmin && (
-				<TouchableOpacity
-					onPress={onDelete}
-					disabled={deleting}
-					style={{
-						backgroundColor: "#fee2e2",
-						borderRadius: 16,
-						padding: 16,
-						borderWidth: 1,
-						borderColor: "#fecaca",
-						alignItems: "center",
-					}}
-				>
-					<Text style={{ fontSize: 16, fontWeight: "600", color: "#dc2626" }}>
-						{deleting ? "Удаление..." : "Удалить объявление"}
-					</Text>
-				</TouchableOpacity>
-			)}
-
 			{/* Кнопка статистики для админов и авторов */}
 			{isAdminOrAuthor && (
 				<TouchableOpacity
@@ -365,6 +347,26 @@ export default function AnnouncementDetailScreen() {
 				>
 					<Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "600" }}>
 						{marking ? "Помечаем..." : "Отметить прочитанным"}
+					</Text>
+				</TouchableOpacity>
+			)}
+
+			{/* Кнопка удаления внизу (только для админа) */}
+			{isAdmin && (
+				<TouchableOpacity
+					onPress={onDelete}
+					disabled={deleting}
+					style={{
+						backgroundColor: "#fee2e2",
+						borderRadius: 16,
+						padding: 16,
+						borderWidth: 1,
+						borderColor: "#fecaca",
+						alignItems: "center",
+					}}
+				>
+					<Text style={{ fontSize: 16, fontWeight: "600", color: "#dc2626" }}>
+						{deleting ? "Удаление..." : "Удалить объявление"}
 					</Text>
 				</TouchableOpacity>
 			)}

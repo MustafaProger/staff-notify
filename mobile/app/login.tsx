@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, TextInput, ScrollView, Alert, TouchableOpacity, SafeAreaView } from "react-native";
 import { useRouter } from "expo-router";
 import { login, saveToken, me } from "../lib/api";
 
@@ -24,26 +24,27 @@ export default function LoginScreen() {
 	};
 
 	return (
-		<SafeAreaView
-			style={{
-				flex: 1,
-				backgroundColor: "#f8fafc",
-				paddingHorizontal: 32,
-				paddingVertical: 24,
-				justifyContent: "center",
-			}}
-		>
-			<View
-				style={{
-					backgroundColor: "#ffffff",
-					borderRadius: 16,
-					padding: 24,
-					shadowColor: "#000",
-					shadowOffset: { width: 0, height: 2 },
-					shadowOpacity: 0.1,
-					shadowRadius: 8,
+		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+			<ScrollView
+				contentContainerStyle={{
+					flexGrow: 1,
+					justifyContent: "center",
+					paddingHorizontal: 32,
+					paddingVertical: 24,
 				}}
+				keyboardShouldPersistTaps="handled"
 			>
+				<View
+					style={{
+						backgroundColor: "#ffffff",
+						borderRadius: 16,
+						padding: 24,
+						shadowColor: "#000",
+						shadowOffset: { width: 0, height: 2 },
+						shadowOpacity: 0.1,
+						shadowRadius: 8,
+					}}
+				>
 				<Text
 					style={{
 						fontSize: 28,
@@ -132,6 +133,7 @@ export default function LoginScreen() {
 					</TouchableOpacity>
 				</View>
 			</View>
+		</ScrollView>
 		</SafeAreaView>
 	);
 }
