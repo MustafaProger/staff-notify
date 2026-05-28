@@ -29,13 +29,16 @@ export default function LoginScreen() {
 				contentContainerStyle={{
 					flexGrow: 1,
 					justifyContent: "center",
-					paddingHorizontal: 32,
-					paddingVertical: 24,
+					alignItems: "center",
+					paddingHorizontal: 24,
+					paddingVertical: 32,
 				}}
 				keyboardShouldPersistTaps="handled"
 			>
 				<View
 					style={{
+						width: "100%",
+						maxWidth: 520,
 						backgroundColor: "#ffffff",
 						borderRadius: 16,
 						padding: 24,

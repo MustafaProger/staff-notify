@@ -128,6 +128,9 @@ export default function FeedScreen() {
 		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
 			<View
 				style={{
+					width: "100%",
+					maxWidth: 920,
+					alignSelf: "center",
 					paddingTop: 12,
 					paddingHorizontal: 16,
 					paddingBottom: 8,
@@ -198,8 +201,18 @@ export default function FeedScreen() {
 				}
 				contentContainerStyle={
 					items.length
-						? { padding: 16, gap: 16, backgroundColor: "#f8fafc" }
+						? {
+								width: "100%",
+								maxWidth: 920,
+								alignSelf: "center",
+								padding: 16,
+								gap: 16,
+								backgroundColor: "#f8fafc",
+						  }
 						: {
+								width: "100%",
+								maxWidth: 920,
+								alignSelf: "center",
 								flexGrow: 1,
 								alignItems: "center",
 								justifyContent: "center",

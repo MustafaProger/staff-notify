@@ -165,6 +165,9 @@ export default function EditAnnouncementScreen() {
 		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
 			<View
 				style={{
+					width: "100%",
+					maxWidth: 820,
+					alignSelf: "center",
 					paddingTop: 12,
 					paddingHorizontal: 16,
 					paddingBottom: 8,
@@ -181,7 +184,15 @@ export default function EditAnnouncementScreen() {
 			</View>
 
 			<ScrollView
-				contentContainerStyle={{ paddingHorizontal: 32, paddingVertical: 24, gap: 24, backgroundColor: "#f8fafc" }}
+				contentContainerStyle={{
+					width: "100%",
+					maxWidth: 820,
+					alignSelf: "center",
+					paddingHorizontal: 24,
+					paddingVertical: 24,
+					gap: 24,
+					backgroundColor: "#f8fafc",
+				}}
 				keyboardShouldPersistTaps="handled"
 			>
 				<View

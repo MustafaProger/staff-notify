@@ -137,6 +137,9 @@ export default function CreateAnnouncementScreen() {
 		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
 			<View
 				style={{
+					width: "100%",
+					maxWidth: 820,
+					alignSelf: "center",
 					paddingTop: 12,
 					paddingHorizontal: 16,
 					paddingBottom: 8,
@@ -164,6 +167,9 @@ export default function CreateAnnouncementScreen() {
 
 		<ScrollView
 			contentContainerStyle={{
+				width: "100%",
+				maxWidth: 820,
+				alignSelf: "center",
 				padding: 20,
 				gap: 24,
 				backgroundColor: "#f8fafc",

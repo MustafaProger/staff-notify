@@ -1,13 +1,32 @@
 import axios, { AxiosHeaders } from "axios";
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
-const API_BASE = "http://192.168.1.6:3000"; // на реальном устройстве замени на IP твоего компа
+const NATIVE_API_BASE = "http://192.168.1.9:3000";
+
+function getWebApiBase() {
+	if (typeof window === "undefined") return "http://localhost:3000";
+
+	const hostname = window.location.hostname;
+	if (!hostname || hostname === "localhost" || hostname === "127.0.0.1") {
+		return "http://localhost:3000";
+	}
+
+	return `http://${hostname}:3000`;
+}
+
+const API_BASE = Platform.OS === "web" ? getWebApiBase() : NATIVE_API_BASE;
 export const api = axios.create({
 	baseURL: API_BASE,
 	headers: { "Content-Type": "application/json" },
 });
 
 const TOKEN_KEY = "auth_token";
+
+function getWebStorage() {
+	if (Platform.OS !== "web" || typeof window === "undefined") return null;
+	return window.localStorage;
+}
 
 export type AuthUser = {
 	id: number;
@@ -64,12 +83,27 @@ export type CreateAnnouncementPayload = {
 };
 
 export async function saveToken(token: string) {
+	const storage = getWebStorage();
+	if (storage) {
+		storage.setItem(TOKEN_KEY, token);
+		return;
+	}
+
 	await SecureStore.setItemAsync(TOKEN_KEY, token);
 }
 export async function getToken() {
+	const storage = getWebStorage();
+	if (storage) return storage.getItem(TOKEN_KEY);
+
 	return SecureStore.getItemAsync(TOKEN_KEY);
 }
 export async function clearToken() {
+	const storage = getWebStorage();
+	if (storage) {
+		storage.removeItem(TOKEN_KEY);
+		return;
+	}
+
 	await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 

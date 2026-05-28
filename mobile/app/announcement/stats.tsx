@@ -76,6 +76,9 @@ export default function AnnouncementStatsScreen() {
 		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
 			<View
 				style={{
+					width: "100%",
+					maxWidth: 820,
+					alignSelf: "center",
 					paddingTop: 12,
 					paddingHorizontal: 16,
 					paddingBottom: 8,
@@ -101,7 +104,15 @@ export default function AnnouncementStatsScreen() {
 				<View style={{ width: 48 }} />
 			</View>
 
-		<ScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
+		<ScrollView
+			contentContainerStyle={{
+				width: "100%",
+				maxWidth: 820,
+				alignSelf: "center",
+				padding: 16,
+				gap: 20,
+			}}
+		>
 			{/* Заголовок */}
 			<View
 				style={{
@@ -284,4 +295,3 @@ export default function AnnouncementStatsScreen() {
 		</SafeAreaView>
 	);
 }
-

@@ -1,14 +1,11 @@
 // server/src/index.ts
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import authRouter from "./auth/routes";
 import metaRouter from "./modules/meta/meta.router";
 import announcementsRouter from "./announcements/routes";
 import { authMiddleware } from "./auth/middleware";
-
-// подхватываем переменные окружения из server/.env
-dotenv.config();
 
 const app = express();
 

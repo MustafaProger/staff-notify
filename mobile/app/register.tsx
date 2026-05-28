@@ -100,6 +100,9 @@ export default function RegisterScreen() {
 		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
 			<View
 				style={{
+					width: "100%",
+					maxWidth: 720,
+					alignSelf: "center",
 					paddingTop: 12,
 					paddingHorizontal: 16,
 					paddingBottom: 8,
@@ -127,7 +130,9 @@ export default function RegisterScreen() {
 
 		<ScrollView
 			contentContainerStyle={{
-				paddingHorizontal: 32,
+				flexGrow: 1,
+				alignItems: "center",
+				paddingHorizontal: 24,
 				paddingVertical: 24,
 				backgroundColor: "#f8fafc",
 			}}
@@ -135,6 +140,8 @@ export default function RegisterScreen() {
 		>
 			<View
 				style={{
+					width: "100%",
+					maxWidth: 640,
 					backgroundColor: "#ffffff",
 					borderRadius: 16,
 					padding: 24,
