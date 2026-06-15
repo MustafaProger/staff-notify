@@ -14,11 +14,13 @@ import {
 	CreateAnnouncementPayload,
 	Department,
 	Role,
+	getApiErrorMessage,
 	getAnnouncement,
 	getDepartments,
 	getRoles,
 	updateAnnouncement,
 } from "../../../lib/api";
+import { showMessage } from "../../../lib/feedback";
 
 type AnnouncementTarget = {
 	id: number;
@@ -55,17 +57,15 @@ export default function EditAnnouncementScreen() {
 			const { item } = await getAnnouncement(numericId);
 			setTitle(item.title);
 			setBody(item.body);
-			const targets = (item as any).targets as AnnouncementTarget[] | undefined;
-			if (targets?.length) {
-				const roleIds = targets.filter((t) => t.roleId).map((t) => t.roleId!);
-				const deptIds = targets.filter((t) => t.departmentId).map((t) => t.departmentId!);
-				const userIds = targets.filter((t) => t.userId).map((t) => t.userId!);
-				setSelectedRoles(roleIds);
-				setSelectedDepartments(deptIds);
-				if (userIds.length) setUserIdsRaw(userIds.join(", "));
-			}
+			const targets = ((item as any).targets as AnnouncementTarget[] | undefined) ?? [];
+			const roleIds = targets.filter((t) => t.roleId).map((t) => t.roleId!);
+			const deptIds = targets.filter((t) => t.departmentId).map((t) => t.departmentId!);
+			const userIds = targets.filter((t) => t.userId).map((t) => t.userId!);
+			setSelectedRoles(roleIds);
+			setSelectedDepartments(deptIds);
+			setUserIdsRaw(userIds.length ? userIds.join(", ") : "");
 		} catch (err: any) {
-			Alert.alert("Ошибка", err?.response?.data?.message ?? "Не удалось загрузить объявление");
+			Alert.alert("Ошибка", getApiErrorMessage(err, "Не удалось загрузить объявление"));
 			router.back();
 		} finally {
 			setLoadingItem(false);
@@ -82,7 +82,7 @@ export default function EditAnnouncementScreen() {
 				setRoles(rolesResp.items);
 				setDepartments(depsResp.items);
 			} catch (err: any) {
-				Alert.alert("Ошибка", err?.response?.data?.message ?? "Не удалось загрузить справочники");
+				Alert.alert("Ошибка", getApiErrorMessage(err, "Не удалось загрузить справочники"));
 			} finally {
 				if (active) setLoadingMeta(false);
 			}
@@ -143,11 +143,13 @@ export default function EditAnnouncementScreen() {
 		try {
 			setSubmitting(true);
 			await updateAnnouncement(numericId, payload);
-			Alert.alert("Готово", "Объявление обновлено", [
-				{ text: "Ок", onPress: () => router.replace(`/announcement/${numericId}`) },
-			]);
+			await showMessage("Готово", "Объявление обновлено");
+			router.replace({
+				pathname: "/announcement/[id]",
+				params: { id: String(numericId), saved: String(Date.now()) },
+			});
 		} catch (err: any) {
-			Alert.alert("Ошибка", err?.response?.data?.message ?? "Не удалось обновить объявление");
+			Alert.alert("Ошибка", getApiErrorMessage(err, "Не удалось обновить объявление"));
 		} finally {
 			setSubmitting(false);
 		}

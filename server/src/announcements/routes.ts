@@ -16,6 +16,42 @@ const ListQuerySchema = z.object({
 	offset: z.coerce.number().int().min(0).default(0),
 });
 
+function validationResponse(err: z.ZodError) {
+	return {
+		message: err.issues[0]?.message ?? "Validation error",
+		issues: err.issues,
+		errors: err.flatten(),
+	};
+}
+
+function getAccessibleAnnouncementWhere({
+	id,
+	userId,
+	roleId,
+	departmentId,
+	isAdmin,
+}: {
+	id?: number;
+	userId: number;
+	roleId: number;
+	departmentId: number;
+	isAdmin: boolean;
+}): Prisma.AnnouncementWhereInput {
+	const idFilter = id ? { id } : {};
+	if (isAdmin) return idFilter;
+
+	return {
+		...idFilter,
+		OR: [
+			{ authorId: userId },
+			{ targets: { none: {} } },
+			{ targets: { some: { roleId } } },
+			{ targets: { some: { departmentId } } },
+			{ targets: { some: { userId } } },
+		],
+	};
+}
+
 /** GET /announcements — лента для текущего пользователя */
 router.get("/", async (req: AuthedRequest, res: Response) => {
 	if (!req.user) return res.status(401).json({ message: "Unauthorized" });
@@ -31,16 +67,12 @@ router.get("/", async (req: AuthedRequest, res: Response) => {
 	});
 	const isAdmin = currentUser?.role?.name === "admin";
 
-	// ВАЖНО: никаких "as const" — иначе получится readonly-массив
-	const where: Prisma.AnnouncementWhereInput = isAdmin
-		? {}
-		: {
-				OR: [
-					{ targets: { some: { roleId } } },
-					{ targets: { some: { departmentId } } },
-					{ targets: { some: { userId } } },
-				],
-		  };
+	const where = getAccessibleAnnouncementWhere({
+		userId,
+		roleId,
+		departmentId,
+		isAdmin,
+	});
 
 	const [total, rawItems] = await Promise.all([
 		prisma.announcement.count({ where }),
@@ -124,9 +156,7 @@ router.post("/", async (req: AuthedRequest, res: Response) => {
 		return res.status(201).json({ item: created });
 	} catch (e) {
 		if (e instanceof z.ZodError) {
-			return res
-				.status(400)
-				.json({ message: "Validation error", issues: e.issues });
+			return res.status(400).json(validationResponse(e));
 		}
 		console.error(e);
 		return res.status(500).json({ message: "Internal error" });
@@ -141,8 +171,20 @@ router.get("/:id", async (req: AuthedRequest, res: Response) => {
 
   const userId = req.user.id;
 
-  const item = await prisma.announcement.findUnique({
-    where: { id },
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  const isAdmin = currentUser?.role?.name === "admin";
+
+  const item = await prisma.announcement.findFirst({
+    where: getAccessibleAnnouncementWhere({
+      id,
+      userId,
+      roleId: req.user.roleId,
+      departmentId: req.user.departmentId,
+      isAdmin,
+    }),
     include: {
       author: { select: { id: true, fullName: true, email: true } },
       targets: true,
@@ -179,16 +221,13 @@ router.post("/:id/read", async (req: AuthedRequest, res: Response) => {
   const isAdmin = userWithRole?.role?.name === "admin";
 
   const canSee = await prisma.announcement.findFirst({
-    where: isAdmin
-      ? { id }
-      : {
-          id,
-          OR: [
-            { targets: { some: { roleId: req.user.roleId } } },
-            { targets: { some: { departmentId: req.user.departmentId } } },
-            { targets: { some: { userId } } },
-          ],
-        },
+    where: getAccessibleAnnouncementWhere({
+      id,
+      userId,
+      roleId: req.user.roleId,
+      departmentId: req.user.departmentId,
+      isAdmin,
+    }),
     select: { id: true },
   });
   if (!canSee) return res.status(404).json({ message: "Announcement not available" });
@@ -284,7 +323,7 @@ router.patch("/:id", async (req: AuthedRequest, res: Response) => {
     return res.json({ item: updated });
   } catch (e) {
     if (e instanceof z.ZodError) {
-      return res.status(400).json({ message: "Validation error", issues: e.issues });
+      return res.status(400).json(validationResponse(e));
     }
     console.error(e);
     return res.status(500).json({ message: "Internal error" });
@@ -368,14 +407,19 @@ router.get("/:id/stats", async (req: AuthedRequest, res: Response) => {
     targetUserIds = allUsers.map((u) => u.id);
   }
 
+  const readReceiptsWhere: Prisma.ReadReceiptWhereInput = {
+    announcementId: id,
+    userId: { in: targetUserIds },
+  };
+
   // Получаем количество прочитавших
   const readCount = await prisma.readReceipt.count({
-    where: { announcementId: id },
+    where: readReceiptsWhere,
   });
 
   // Получаем список пользователей с прочтениями
   const readReceipts = await prisma.readReceipt.findMany({
-    where: { announcementId: id },
+    where: readReceiptsWhere,
     include: {
       user: {
         select: {

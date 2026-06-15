@@ -3,7 +3,6 @@ import {
 	View,
 	Text,
 	TextInput,
-	Button,
 	Alert,
 	ActivityIndicator,
 	ScrollView,
@@ -12,12 +11,21 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
+	clearToken,
 	Department,
+	getApiErrorMessage,
 	getDepartments,
-	me,
 	register as registerRequest,
-	saveToken,
 } from "../lib/api";
+
+function getPasswordErrors(password: string) {
+	const errors: string[] = [];
+	if (password.length < 8) errors.push("Пароль должен содержать минимум 8 символов");
+	if (!/[A-Z]/.test(password)) errors.push("Нужна заглавная буква");
+	if (!/[a-z]/.test(password)) errors.push("Нужна строчная буква");
+	if (!/[0-9]/.test(password)) errors.push("Нужна цифра");
+	return errors;
+}
 
 export default function RegisterScreen() {
 	const router = useRouter();
@@ -28,6 +36,12 @@ export default function RegisterScreen() {
 	const [departments, setDepartments] = useState<Department[]>([]);
 	const [loadingDeps, setLoadingDeps] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+	const showError = (message: string) => {
+		setErrorMessage(message);
+		Alert.alert("Ошибка", message);
+	};
 
 	useEffect(() => {
 		let active = true;
@@ -41,10 +55,8 @@ export default function RegisterScreen() {
 					setDepartmentId(items[0].id);
 				}
 			} catch (err: any) {
-				Alert.alert(
-					"Ошибка",
-					err?.response?.data?.message ??
-						"Не удалось загрузить список подразделений"
+				showError(
+					getApiErrorMessage(err, "Не удалось загрузить список подразделений")
 				);
 			} finally {
 				if (active) setLoadingDeps(false);
@@ -58,39 +70,42 @@ export default function RegisterScreen() {
 
 	const onSubmit = async () => {
 		if (submitting) return;
+		setErrorMessage(null);
+
 		if (!fullName.trim()) {
-			Alert.alert("Ошибка", "Укажите полное имя");
+			showError("Укажите полное имя");
 			return;
 		}
 		if (!email.trim()) {
-			Alert.alert("Ошибка", "Введите email");
+			showError("Введите email");
 			return;
 		}
-		if (password.length < 8) {
-			Alert.alert("Ошибка", "Пароль должен содержать минимум 8 символов");
+		const passwordErrors = getPasswordErrors(password);
+		if (passwordErrors.length) {
+			showError(passwordErrors.join("\n"));
 			return;
 		}
 		if (departmentId === null) {
-			Alert.alert("Ошибка", "Выберите подразделение");
+			showError("Выберите подразделение");
 			return;
 		}
 
 		try {
 			setSubmitting(true);
-			const { token } = await registerRequest({
-				email: email.trim(),
+			const normalizedEmail = email.trim().toLowerCase();
+			await registerRequest({
+				email: normalizedEmail,
 				password,
 				fullName: fullName.trim(),
 				departmentId,
 			});
-			await saveToken(token);
-			await me(); // проверяем токен
-			router.replace("/feed");
+			await clearToken();
+			router.replace({
+				pathname: "/login",
+				params: { email: normalizedEmail, registered: "1" },
+			});
 		} catch (err: any) {
-			Alert.alert(
-				"Ошибка",
-				err?.response?.data?.message ?? "Не удалось зарегистрироваться"
-			);
+			showError(getApiErrorMessage(err, "Не удалось зарегистрироваться"));
 		} finally {
 			setSubmitting(false);
 		}
@@ -166,13 +181,31 @@ export default function RegisterScreen() {
 				</Text>
 
 				<View style={{ gap: 20 }}>
+					{errorMessage && (
+						<View
+							style={{
+								backgroundColor: "#fee2e2",
+								borderColor: "#fecaca",
+								borderRadius: 10,
+								borderWidth: 1,
+								padding: 12,
+							}}
+						>
+							<Text style={{ color: "#991b1b", fontSize: 14, lineHeight: 20 }}>
+								{errorMessage}
+							</Text>
+						</View>
+					)}
 					<View style={{ gap: 8 }}>
 						<Text style={{ fontSize: 14, fontWeight: "600", color: "#475569" }}>
 							ФИО
 						</Text>
 						<TextInput
 							value={fullName}
-							onChangeText={setFullName}
+							onChangeText={(value) => {
+								setFullName(value);
+								setErrorMessage(null);
+							}}
 							placeholder="Иван Иванов"
 							style={{
 								borderWidth: 1.5,
@@ -191,7 +224,10 @@ export default function RegisterScreen() {
 						</Text>
 						<TextInput
 							value={email}
-							onChangeText={setEmail}
+							onChangeText={(value) => {
+								setEmail(value);
+								setErrorMessage(null);
+							}}
 							autoCapitalize="none"
 							keyboardType="email-address"
 							placeholder="user@corp.local"
@@ -212,9 +248,12 @@ export default function RegisterScreen() {
 						</Text>
 						<TextInput
 							value={password}
-							onChangeText={setPassword}
+							onChangeText={(value) => {
+								setPassword(value);
+								setErrorMessage(null);
+							}}
 							secureTextEntry
-							placeholder="Не менее 8 символов"
+							placeholder="Admin123!"
 							style={{
 								borderWidth: 1.5,
 								borderColor: "#e2e8f0",
@@ -224,6 +263,9 @@ export default function RegisterScreen() {
 								backgroundColor: "#f8fafc",
 							}}
 						/>
+						<Text style={{ color: "#64748b", fontSize: 12, lineHeight: 18 }}>
+							Минимум 8 символов, заглавная и строчная буквы, цифра.
+						</Text>
 					</View>
 
 					<View style={{ gap: 8 }}>

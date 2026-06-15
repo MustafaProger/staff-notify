@@ -28,6 +28,8 @@ app.use("/announcements", authMiddleware, announcementsRouter);
 
 // стартуем сервер
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-app.listen(PORT, () => {
-  console.log(`[server] listening on http://localhost:${PORT}`);
+const HOST = process.env.HOST ?? "0.0.0.0";
+app.listen(PORT, HOST, () => {
+  const printableHost = HOST === "0.0.0.0" ? "localhost" : HOST;
+  console.log(`[server] listening on http://${printableHost}:${PORT}`);
 });

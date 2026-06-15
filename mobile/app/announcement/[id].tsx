@@ -7,16 +7,20 @@ import {
 	Alert,
 	TouchableOpacity,
 	SafeAreaView,
+	Modal,
+	Platform,
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import {
 	Announcement,
 	DetailedUser,
 	deleteAnnouncement,
+	getApiErrorMessage,
 	getAnnouncement,
 	markAnnouncementRead,
 	me,
 } from "../../lib/api";
+import { confirmAction } from "../../lib/feedback";
 
 type AnnouncementWithStatus = Announcement & { isRead: boolean };
 
@@ -27,6 +31,7 @@ export default function AnnouncementDetailScreen() {
 	const [loading, setLoading] = useState(true);
 	const [marking, setMarking] = useState(false);
 	const [deleting, setDeleting] = useState(false);
+	const [deletePromptVisible, setDeletePromptVisible] = useState(false);
 	const [profile, setProfile] = useState<DetailedUser | null>(null);
 
 	const numericId = Number(id);
@@ -48,7 +53,7 @@ export default function AnnouncementDetailScreen() {
 		} catch (err: any) {
 			Alert.alert(
 				"Ошибка",
-				err?.response?.data?.message ?? "Не удалось загрузить объявление"
+				getApiErrorMessage(err, "Не удалось загрузить объявление")
 			);
 			router.back();
 		} finally {
@@ -71,7 +76,7 @@ export default function AnnouncementDetailScreen() {
 		} catch (err: any) {
 			Alert.alert(
 				"Ошибка",
-				err?.response?.data?.message ?? "Не удалось отметить объявление"
+				getApiErrorMessage(err, "Не удалось отметить объявление")
 			);
 		} finally {
 			setMarking(false);
@@ -112,37 +117,125 @@ export default function AnnouncementDetailScreen() {
 		profile?.role.name === "admin" || item?.author.id === profile?.id;
 	const isAdmin = profile?.role.name === "admin";
 
-	const onDelete = () => {
-		if (!item) return;
-		Alert.alert(
-			"Удалить объявление?",
-			`«${item.title}» будет удалено без возможности восстановления.`,
-			[
-				{ text: "Отмена", style: "cancel" },
-				{
-					text: "Удалить",
-					style: "destructive",
-					onPress: async () => {
-						try {
-							setDeleting(true);
-							await deleteAnnouncement(numericId);
-							router.replace("/feed");
-						} catch (err: any) {
-							Alert.alert(
-								"Ошибка",
-								err?.response?.data?.message ?? "Не удалось удалить объявление"
-							);
-						} finally {
-							setDeleting(false);
-						}
-					},
-				},
-			]
-		);
+	const performDelete = async () => {
+		try {
+			setDeleting(true);
+			setDeletePromptVisible(false);
+			await deleteAnnouncement(numericId);
+			router.replace("/feed");
+		} catch (err: any) {
+			Alert.alert(
+				"Ошибка",
+				getApiErrorMessage(err, "Не удалось удалить объявление")
+			);
+		} finally {
+			setDeleting(false);
+		}
+	};
+
+	const onDelete = async () => {
+		if (!item || deleting) return;
+		if (Platform.OS === "web") {
+			setDeletePromptVisible(true);
+			return;
+		}
+
+		const confirmed = await confirmAction({
+			title: "Удалить объявление?",
+			message: `«${item.title}» будет удалено без возможности восстановления.`,
+			confirmText: "Удалить",
+			destructive: true,
+		});
+		if (!confirmed) return;
+
+		await performDelete();
 	};
 
 	return (
 		<SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+			<Modal
+				visible={deletePromptVisible}
+				transparent
+				animationType="fade"
+				onRequestClose={() => setDeletePromptVisible(false)}
+			>
+				<View
+					style={{
+						flex: 1,
+						alignItems: "center",
+						justifyContent: "center",
+						backgroundColor: "rgba(15, 23, 42, 0.45)",
+						padding: 20,
+					}}
+				>
+					<View
+						style={{
+							width: "100%",
+							maxWidth: 420,
+							backgroundColor: "#ffffff",
+							borderRadius: 16,
+							padding: 20,
+							borderWidth: 1,
+							borderColor: "#fecaca",
+							shadowColor: "#000",
+							shadowOffset: { width: 0, height: 8 },
+							shadowOpacity: 0.18,
+							shadowRadius: 18,
+						}}
+					>
+						<Text
+							style={{
+								fontSize: 20,
+								fontWeight: "700",
+								color: "#0f172a",
+								marginBottom: 8,
+							}}
+						>
+							Удалить объявление?
+						</Text>
+						<Text style={{ fontSize: 15, lineHeight: 22, color: "#475569" }}>
+							«{item.title}» будет удалено без возможности восстановления.
+						</Text>
+						<View
+							style={{
+								flexDirection: "row",
+								justifyContent: "flex-end",
+								gap: 12,
+								marginTop: 20,
+							}}
+						>
+							<TouchableOpacity
+								onPress={() => setDeletePromptVisible(false)}
+								disabled={deleting}
+								style={{
+									paddingHorizontal: 16,
+									paddingVertical: 12,
+									borderRadius: 10,
+									backgroundColor: "#f1f5f9",
+								}}
+							>
+								<Text style={{ color: "#334155", fontWeight: "600" }}>
+									Отмена
+								</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								onPress={performDelete}
+								disabled={deleting}
+								style={{
+									paddingHorizontal: 16,
+									paddingVertical: 12,
+									borderRadius: 10,
+									backgroundColor: deleting ? "#fca5a5" : "#dc2626",
+								}}
+							>
+								<Text style={{ color: "#ffffff", fontWeight: "700" }}>
+									{deleting ? "Удаление..." : "Удалить"}
+								</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+				</View>
+			</Modal>
 			<View
 				style={{
 					width: "100%",

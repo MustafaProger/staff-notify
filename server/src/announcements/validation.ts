@@ -2,8 +2,8 @@
 import { z } from "zod";
 
 export const CreateAnnouncementSchema = z.object({
-  title: z.string().min(1).max(200),
-  body: z.string().min(1),
+  title: z.string().trim().min(1, "Введите заголовок").max(200, "Заголовок слишком длинный"),
+  body: z.string().trim().min(1, "Введите текст объявления"),
   targets: z
     .object({
       roles: z.array(z.number().int().positive()).optional().default([]),

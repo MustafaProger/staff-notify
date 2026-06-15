@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma";
 import { authMiddleware } from "./middleware";
 import type { AuthedRequest } from "../types/auth";
@@ -10,21 +11,29 @@ const router = Router();
 
 /** Schemas */
 const LoginSchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(1),
+	email: z.string().trim().toLowerCase().email("Введите корректный email"),
+	password: z.string().min(1, "Введите пароль"),
 });
 
 const RegisterSchema = z.object({
-	email: z.string().email(),
+	email: z.string().trim().toLowerCase().email("Введите корректный email"),
 	password: z
 		.string()
 		.min(8, "Пароль должен содержать минимум 8 символов")
 		.regex(/[A-Z]/, "Нужна заглавная буква")
 		.regex(/[a-z]/, "Нужна строчная буква")
 		.regex(/[0-9]/, "Нужна цифра"),
-	fullName: z.string().min(1, "Укажите полное имя"),
-	departmentId: z.number().int("departmentId должен быть числом"),
+	fullName: z.string().trim().min(1, "Укажите полное имя"),
+	departmentId: z.coerce.number().int("departmentId должен быть числом"),
 });
+
+function validationResponse(err: z.ZodError) {
+	return {
+		message: err.issues[0]?.message ?? "Validation error",
+		issues: err.issues,
+		errors: err.flatten(),
+	};
+}
 
 /** POST /auth/login */
 router.post("/login", async (req: Request, res: Response) => {
@@ -32,10 +41,10 @@ router.post("/login", async (req: Request, res: Response) => {
 		const dto = LoginSchema.parse(req.body);
 
 		const user = await prisma.user.findUnique({ where: { email: dto.email } });
-		if (!user) return res.status(401).json({ message: "Invalid credentials" });
+		if (!user) return res.status(401).json({ message: "Неверный email или пароль" });
 
 		const ok = await bcrypt.compare(dto.password, user.passwordHash);
-		if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+		if (!ok) return res.status(401).json({ message: "Неверный email или пароль" });
 
 		// аудит входа
 		await prisma.auditLog.create({
@@ -71,9 +80,7 @@ router.post("/login", async (req: Request, res: Response) => {
 		});
 	} catch (err: any) {
 		if (err instanceof z.ZodError) {
-			return res
-				.status(400)
-				.json({ message: "Validation error", errors: err.flatten() });
+			return res.status(400).json(validationResponse(err));
 		}
 		console.error("[/auth/login] error:", err);
 		return res.status(500).json({ message: "Internal error" });
@@ -163,9 +170,13 @@ router.post("/register", async (req: Request, res: Response) => {
 		return res.status(201).json({ token, user });
 	} catch (err: any) {
 		if (err instanceof z.ZodError) {
-			return res
-				.status(400)
-				.json({ message: "Validation error", errors: err.flatten() });
+			return res.status(400).json(validationResponse(err));
+		}
+		if (
+			err instanceof Prisma.PrismaClientKnownRequestError &&
+			err.code === "P2002"
+		) {
+			return res.status(409).json({ message: "Email уже зарегистрирован" });
 		}
 		console.error("[/auth/register] error:", err);
 		return res.status(500).json({ message: "Internal error" });

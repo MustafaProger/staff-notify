@@ -3,7 +3,6 @@ import {
 	View,
 	Text,
 	TextInput,
-	Button,
 	Alert,
 	ScrollView,
 	ActivityIndicator,
@@ -16,9 +15,11 @@ import {
 	Department,
 	Role,
 	createAnnouncement,
+	getApiErrorMessage,
 	getDepartments,
 	getRoles,
 } from "../../lib/api";
+import { showMessage } from "../../lib/feedback";
 
 export default function CreateAnnouncementScreen() {
 	const router = useRouter();
@@ -47,7 +48,7 @@ export default function CreateAnnouncementScreen() {
 			} catch (err: any) {
 				Alert.alert(
 					"Ошибка",
-					err?.response?.data?.message ?? "Не удалось загрузить справочники"
+					getApiErrorMessage(err, "Не удалось загрузить справочники")
 				);
 			} finally {
 				if (active) setLoadingMeta(false);
@@ -117,16 +118,12 @@ export default function CreateAnnouncementScreen() {
 		try {
 			setSubmitting(true);
 			await createAnnouncement(payload);
-			Alert.alert("Готово", "Объявление опубликовано", [
-				{
-					text: "Ок",
-					onPress: () => router.replace("/feed"),
-				},
-			]);
+			await showMessage("Готово", "Объявление опубликовано");
+			router.replace("/feed");
 		} catch (err: any) {
 			Alert.alert(
 				"Ошибка",
-				err?.response?.data?.message ?? "Не удалось создать объявление"
+				getApiErrorMessage(err, "Не удалось создать объявление")
 			);
 		} finally {
 			setSubmitting(false);

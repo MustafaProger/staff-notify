@@ -1,21 +1,72 @@
 import axios, { AxiosHeaders } from "axios";
+import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const NATIVE_API_BASE = "http://192.168.1.9:3000";
+declare const process:
+	| {
+			env?: {
+				EXPO_PUBLIC_API_URL?: string;
+				EXPO_PUBLIC_API_PORT?: string;
+			};
+	  }
+	| undefined;
+
+const env = typeof process === "undefined" ? undefined : process?.env;
+const CUSTOM_API_BASE = env?.EXPO_PUBLIC_API_URL?.replace(/\/+$/, "");
+const API_PORT = env?.EXPO_PUBLIC_API_PORT ?? "3000";
+
+type ConstantsWithDevHost = typeof Constants & {
+	expoConfig?: (typeof Constants.expoConfig & { hostUri?: string }) | null;
+	manifest?: { debuggerHost?: string } | null;
+	manifest2?: { extra?: { expoGo?: { debuggerHost?: string } } } | null;
+};
+
+function getHostFromDevUri(value?: string | null) {
+	if (!value) return null;
+
+	const withoutScheme = value.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "");
+	const hostWithPort = withoutScheme.split("/")[0];
+	const host = hostWithPort.split(":")[0];
+	return host || null;
+}
+
+function getExpoDevHost() {
+	const constants = Constants as ConstantsWithDevHost;
+	return getHostFromDevUri(
+		constants.expoConfig?.hostUri ??
+			constants.manifest2?.extra?.expoGo?.debuggerHost ??
+			constants.manifest?.debuggerHost
+	);
+}
+
+function getNativeApiBase() {
+	if (CUSTOM_API_BASE) return CUSTOM_API_BASE;
+
+	const host = getExpoDevHost();
+	if (host && host !== "localhost" && host !== "127.0.0.1") {
+		return `http://${host}:${API_PORT}`;
+	}
+
+	return Platform.OS === "android"
+		? `http://10.0.2.2:${API_PORT}`
+		: `http://localhost:${API_PORT}`;
+}
 
 function getWebApiBase() {
-	if (typeof window === "undefined") return "http://localhost:3000";
+	if (CUSTOM_API_BASE) return CUSTOM_API_BASE;
+
+	if (typeof window === "undefined") return `http://localhost:${API_PORT}`;
 
 	const hostname = window.location.hostname;
 	if (!hostname || hostname === "localhost" || hostname === "127.0.0.1") {
-		return "http://localhost:3000";
+		return `http://localhost:${API_PORT}`;
 	}
 
-	return `http://${hostname}:3000`;
+	return `http://${hostname}:${API_PORT}`;
 }
 
-const API_BASE = Platform.OS === "web" ? getWebApiBase() : NATIVE_API_BASE;
+const API_BASE = Platform.OS === "web" ? getWebApiBase() : getNativeApiBase();
 export const api = axios.create({
 	baseURL: API_BASE,
 	headers: { "Content-Type": "application/json" },
@@ -181,6 +232,56 @@ export async function markAnnouncementRead(id: number) {
 
 export async function deleteAnnouncement(id: number) {
 	await api.delete(`/announcements/${id}`);
+}
+
+function getValidationMessages(data: any) {
+	const messages: string[] = [];
+
+	if (Array.isArray(data?.issues)) {
+		for (const issue of data.issues) {
+			if (typeof issue?.message === "string") messages.push(issue.message);
+		}
+	}
+
+	const fieldErrors = data?.errors?.fieldErrors;
+	if (fieldErrors && typeof fieldErrors === "object") {
+		for (const value of Object.values(fieldErrors)) {
+			if (Array.isArray(value)) {
+				for (const message of value) {
+					if (typeof message === "string") messages.push(message);
+				}
+			}
+		}
+	}
+
+	const formErrors = data?.errors?.formErrors;
+	if (Array.isArray(formErrors)) {
+		for (const message of formErrors) {
+			if (typeof message === "string") messages.push(message);
+		}
+	}
+
+	return Array.from(new Set(messages));
+}
+
+export function getApiErrorMessage(error: any, fallback: string) {
+	const data = error?.response?.data;
+	const validationMessages = getValidationMessages(data);
+	if (validationMessages.length) return validationMessages.join("\n");
+
+	if (typeof data?.message === "string" && data.message !== "Validation error") {
+		return data.message;
+	}
+
+	if (
+		error?.message === "Network Error" ||
+		error?.code === "ECONNABORTED" ||
+		(!error?.response && error?.request)
+	) {
+		return "Сервер недоступен. Проверьте, что backend запущен и адрес API указан правильно.";
+	}
+
+	return fallback;
 }
 
 export type AnnouncementStatsReader = {

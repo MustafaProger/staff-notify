@@ -19,6 +19,7 @@ import {
 	Announcement,
 	DetailedUser,
 	clearToken,
+	getApiErrorMessage,
 	getAnnouncements,
 	me,
 } from "../lib/api";
@@ -46,7 +47,7 @@ export default function FeedScreen() {
 			} else {
 				Alert.alert(
 					"Ошибка",
-					err?.response?.data?.message ?? "Не удалось получить данные пользователя"
+					getApiErrorMessage(err, "Не удалось получить данные пользователя")
 				);
 			}
 			throw err;
@@ -60,7 +61,7 @@ export default function FeedScreen() {
 		} catch (err: any) {
 			Alert.alert(
 				"Ошибка",
-				err?.response?.data?.message ?? "Не удалось загрузить объявления"
+				getApiErrorMessage(err, "Не удалось загрузить объявления")
 			);
 			throw err;
 		}

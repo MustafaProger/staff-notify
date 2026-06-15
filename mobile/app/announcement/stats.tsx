@@ -9,7 +9,11 @@ import {
 	SafeAreaView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { AnnouncementStats, getAnnouncementStats } from "../../lib/api";
+import {
+	AnnouncementStats,
+	getAnnouncementStats,
+	getApiErrorMessage,
+} from "../../lib/api";
 
 export default function AnnouncementStatsScreen() {
 	const router = useRouter();
@@ -35,7 +39,7 @@ export default function AnnouncementStatsScreen() {
 			} else {
 				Alert.alert(
 					"Ошибка",
-					err?.response?.data?.message ?? "Не удалось загрузить статистику"
+					getApiErrorMessage(err, "Не удалось загрузить статистику")
 				);
 			}
 			router.back();
